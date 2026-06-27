@@ -95,6 +95,8 @@ def haversine(lat1, lon1, lat2, lon2):
     return radius * c
 
 
+PAUSE_THRESHOLD_SECONDS = 1800
+
 def parse_gpx_metrics(path):
     tree = ET.parse(path)
     root = tree.getroot()
@@ -113,40 +115,55 @@ def parse_gpx_metrics(path):
             points.append({"lat": lat, "lon": lon, "ele": ele or 0, "time": time_text})
 
     if len(points) < 2:
-        return {"distance_km": 0.0, "elevation_m": 0.0, "duration_min": 0.0}
+        return {"distance_km": 0.0, "elevation_m": 0.0, "duration_min": 0.0, "created_at": None}
 
     total_distance = 0.0
     total_elevation = 0.0
+    total_active_seconds = 0.0
     previous = None
     start_time = None
-    end_time = None
     for point in points:
         if previous is not None:
             total_distance += haversine(previous["lat"], previous["lon"], point["lat"], point["lon"])
             delta_elevation = point["ele"] - previous["ele"]
             if delta_elevation > 0:
                 total_elevation += delta_elevation
-        previous = point
 
-        if point["time"]:
+            if previous["time"] and point["time"]:
+                try:
+                    prev_time = datetime.fromisoformat(previous["time"].replace("Z", "+00:00"))
+                    cur_time = datetime.fromisoformat(point["time"].replace("Z", "+00:00"))
+                except ValueError:
+                    prev_time = cur_time = None
+                if prev_time is not None and cur_time is not None:
+                    if prev_time.tzinfo is not None:
+                        prev_time = prev_time.astimezone(timezone.utc).replace(tzinfo=None)
+                    if cur_time.tzinfo is not None:
+                        cur_time = cur_time.astimezone(timezone.utc).replace(tzinfo=None)
+                    delta = (cur_time - prev_time).total_seconds()
+                    if delta > 0 and delta <= PAUSE_THRESHOLD_SECONDS:
+                        total_active_seconds += delta
+
+        if point["time"] and start_time is None:
             try:
                 parsed_time = datetime.fromisoformat(point["time"].replace("Z", "+00:00"))
             except ValueError:
                 parsed_time = None
             if parsed_time is not None:
-                if start_time is None:
-                    start_time = parsed_time
-                end_time = parsed_time
+                if parsed_time.tzinfo is not None:
+                    parsed_time = parsed_time.astimezone(timezone.utc).replace(tzinfo=None)
+                start_time = parsed_time
 
-    if start_time and end_time:
-        duration_minutes = max((end_time - start_time).total_seconds() / 60.0, 0.0)
-    else:
-        duration_minutes = 0.0
+        previous = point
+
+    duration_minutes = round(total_active_seconds / 60.0, 2)
+    created_at = start_time.isoformat() if start_time else None
 
     return {
         "distance_km": round(total_distance, 2),
         "elevation_m": round(total_elevation, 2),
-        "duration_min": round(duration_minutes, 2),
+        "duration_min": duration_minutes,
+        "created_at": created_at,
     }
 
 
@@ -181,7 +198,7 @@ def index():
     rides = []
     if user:
         rides = conn.execute(
-            "SELECT * FROM rides WHERE user_id = ? ORDER BY created_at DESC LIMIT 5",
+            "SELECT *, strftime('%d.%m.%Y', created_at) as ride_date FROM rides WHERE user_id = ? ORDER BY created_at DESC LIMIT 5",
             (user["id"],),
         ).fetchall()
 
@@ -264,25 +281,27 @@ def upload():
     filename = f"{uuid.uuid4().hex}_{filename}"
     gpx_path = os.path.join(app.config["UPLOAD_FOLDER"], filename)
     gpx_file.save(gpx_path)
-    distance = parse_gpx_metrics(gpx_path)
+    metrics = parse_gpx_metrics(gpx_path)
+    created_at = metrics["created_at"] or datetime.now(timezone.utc).replace(tzinfo=None).isoformat()
 
     conn = get_db()
     conn.execute(
-        "INSERT INTO rides (user_id, filename, distance_km, elevation_m, duration_min, created_at) VALUES (?, ?, ?, ?, ?, datetime('now'))",
+        "INSERT INTO rides (user_id, filename, distance_km, elevation_m, duration_min, created_at) VALUES (?, ?, ?, ?, ?, ?)",
         (
             session["user_id"],
             filename,
-            distance["distance_km"],
-            distance["elevation_m"],
-            distance["duration_min"],
+            metrics["distance_km"],
+            metrics["elevation_m"],
+            metrics["duration_min"],
+            created_at,
         ),
     )
     conn.execute(
         "UPDATE users SET total_distance_km = total_distance_km + ?, total_elevation_m = total_elevation_m + ?, total_duration_min = total_duration_min + ? WHERE id = ?",
         (
-            distance["distance_km"],
-            distance["elevation_m"],
-            distance["duration_min"],
+            metrics["distance_km"],
+            metrics["elevation_m"],
+            metrics["duration_min"],
             session["user_id"],
         ),
     )
