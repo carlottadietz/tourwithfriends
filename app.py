@@ -205,7 +205,23 @@ def index():
     user = get_current_user()
     conn = get_db()
     users = conn.execute("SELECT id, name, profile_image FROM users ORDER BY name ASC").fetchall()
-    distance_leaderboard = conn.execute(
+    yellow_leaderboard = conn.execute(
+        """
+        SELECT
+            id,
+            name,
+            profile_image,
+            total_distance_km,
+            total_duration_min,
+            CASE
+                WHEN total_duration_min > 0 THEN ROUND((total_distance_km / total_duration_min) * 60.0, 2)
+                ELSE 0
+            END AS avg_speed_kmh
+        FROM users
+        ORDER BY avg_speed_kmh DESC, total_distance_km DESC, name ASC
+        """
+    ).fetchall()
+    white_leaderboard = conn.execute(
         "SELECT id, name, profile_image, total_distance_km FROM users ORDER BY total_distance_km DESC, name ASC"
     ).fetchall()
     elevation_leaderboard = conn.execute(
@@ -216,16 +232,47 @@ def index():
     ).fetchall()
     daily_winners = conn.execute(
         """
-        SELECT strftime('%d.%m.%Y', r.created_at) AS day, r.user_id, r.distance_km, u.name as user_name, u.profile_image as profile_image
-        FROM rides r
-        JOIN users u ON r.user_id = u.id
-        WHERE r.id = (
-            SELECT id FROM rides r2
-            WHERE date(r2.created_at) = date(r.created_at)
-            ORDER BY distance_km DESC, created_at ASC, id ASC
-            LIMIT 1
+        WITH daily_totals AS (
+            SELECT
+                date(r.created_at) AS ride_day,
+                r.user_id,
+                ROUND(SUM(r.distance_km), 2) AS distance_km,
+                ROUND(SUM(r.duration_min), 2) AS duration_min,
+                CASE
+                    WHEN SUM(r.duration_min) > 0 THEN ROUND((SUM(r.distance_km) / SUM(r.duration_min)) * 60.0, 2)
+                    ELSE 0
+                END AS avg_speed_kmh
+            FROM rides r
+            GROUP BY date(r.created_at), r.user_id
         )
-        ORDER BY date(r.created_at) DESC
+        SELECT
+            strftime('%d.%m.%Y', dt.ride_day) AS day,
+            dt.user_id,
+            dt.distance_km,
+            dt.duration_min,
+            dt.avg_speed_kmh,
+            u.name AS user_name,
+            u.profile_image AS profile_image
+        FROM daily_totals dt
+        JOIN users u ON dt.user_id = u.id
+        WHERE NOT EXISTS (
+            SELECT 1
+            FROM daily_totals better
+            WHERE better.ride_day = dt.ride_day
+              AND (
+                  better.avg_speed_kmh > dt.avg_speed_kmh
+                  OR (
+                      better.avg_speed_kmh = dt.avg_speed_kmh
+                      AND better.distance_km > dt.distance_km
+                  )
+                  OR (
+                      better.avg_speed_kmh = dt.avg_speed_kmh
+                      AND better.distance_km = dt.distance_km
+                      AND better.user_id < dt.user_id
+                  )
+              )
+        )
+        ORDER BY dt.ride_day DESC
         """
     ).fetchall()
     rides = []
@@ -236,8 +283,8 @@ def index():
         ).fetchall()
 
     current_leader = None
-    if distance_leaderboard:
-        current_leader = distance_leaderboard[0]
+    if yellow_leaderboard:
+        current_leader = yellow_leaderboard[0]
 
     stats = {
         "distance": 0.0,
@@ -257,7 +304,8 @@ def index():
         users=users,
         current_leader=current_leader,
         stats=stats,
-        distance_leaderboard=distance_leaderboard,
+        yellow_leaderboard=yellow_leaderboard,
+        white_leaderboard=white_leaderboard,
         elevation_leaderboard=elevation_leaderboard,
         duration_leaderboard=duration_leaderboard,
         daily_winners=daily_winners,
