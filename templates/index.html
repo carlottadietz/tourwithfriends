@@ -10,15 +10,23 @@
     body { font-family: Inter, system-ui, sans-serif; min-height: 100vh; background: linear-gradient(180deg, #f8fafc 0%, #ffffff 45%, #e2e8f0 100%); color: #1f2937; margin: 0; padding: 24px; }
     .page { max-width: 1180px; margin: 0 auto; display: grid; gap: 24px; }
     .card { background: rgba(255,255,255,0.97); border: 1px solid rgba(148,163,184,0.24); border-radius: 30px; padding: 24px; box-shadow: 0 24px 60px rgba(148,163,184,0.16); }
-    .topbar { display: grid; grid-template-columns: 1fr auto; gap: 20px; align-items: start; }
+    .topbar { display: grid; grid-template-columns: 2fr 1fr; gap: 20px; align-items: stretch; }
     .logo-block { display: grid; gap: 12px; }
     .label-small { color: #ca8a04; font-size: 0.9rem; letter-spacing: 0.18em; text-transform: uppercase; }
     h1 { margin: 0; font-size: clamp(2.3rem, 4vw, 4rem); letter-spacing: -0.04em; }
     h2 { margin: 0; font-size: 1.2rem; letter-spacing: -0.02em; }
     p, label { color: #475569; line-height: 1.6; }
     .headline-text { display: grid; gap: 10px; max-width: 700px; }
-    .bright-box { background: #fde68a; color: #0f172a; border-radius: 24px; padding: 18px 22px; box-shadow: 0 20px 40px rgba(250,204,21,0.22); }
-    .bright-box strong { display: block; font-size: 1rem; margin-bottom: 6px; }
+    .event-box { background: linear-gradient(145deg, #ffffff, #f8fafc); border-radius: 24px; padding: 20px 24px; border: 1px solid rgba(148,163,184,0.25); box-shadow: 0 18px 36px rgba(148,163,184,0.14); }
+    .event-box strong { display: block; font-size: 1rem; margin-bottom: 6px; }
+    .stage-hero { background: linear-gradient(145deg, #fde68a, #facc15); border-radius: 24px; padding: 18px 18px; display: grid; gap: 10px; border: 2px solid #eab308; }
+    .stage-hero h3 { margin: 0; font-size: 1.05rem; }
+    .winner-row { display: flex; align-items: center; gap: 12px; }
+    .winner-avatar { width: 64px; height: 64px; border-radius: 999px; object-fit: cover; border: 3px solid #eab308; background: #fff; }
+    .winner-placeholder { width: 64px; height: 64px; border-radius: 999px; display: inline-flex; align-items: center; justify-content: center; font-size: 1.8rem; background: #fff7ed; border: 3px solid #eab308; }
+    .winner-text { display: grid; gap: 2px; }
+    .winner-name { font-size: 1rem; font-weight: 900; color: #0f172a; }
+    .winner-meta { font-size: 0.9rem; color: #334155; }
     .layout-two { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px; }
     .layout-three { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
     .section-title { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 16px; }
@@ -46,18 +54,18 @@
     .trikot-full { width: 100%; }
     .trikot-stage { display: grid; gap: 16px; }
     .top-three-cards { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 18px; }
-    .trikot-card { border-radius: 24px; padding: 24px; border: 3px solid rgba(15,23,42,0.16); background: #ffffff; display: grid; gap: 14px; min-height: 280px; }
+    .trikot-card { border-radius: 24px; padding: 24px; border: 6px solid rgba(15,23,42,0.16); background: #ffffff; display: grid; gap: 14px; min-height: 280px; }
     .trikot-card h3 { margin: 0; font-size: 1.55rem; font-weight: 900; }
     .trikot-card p { margin: 0; font-size: 1rem; color: #334155; }
     .trikot-yellow { border-color: #eab308; }
     .trikot-green { border-color: #16a34a; }
     .trikot-polka {
-      border: 4px dotted #dc2626;
+      border: 6px dotted #dc2626;
       background: #ffffff;
     }
     .top-three { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
     .top-three li { display: flex; justify-content: space-between; gap: 10px; font-size: 1.08rem; font-weight: 800; }
-    .top-three .rank { background: rgba(15,23,42,0.08); border-radius: 999px; padding: 3px 8px; font-size: 0.8rem; }
+    .top-three .rank { display: inline-flex; align-items: center; justify-content: center; width: 34px; height: 34px; background: rgba(15,23,42,0.08); border-radius: 999px; font-size: 1rem; margin-right: 6px; }
     .expand-box { border: 1px dashed rgba(148,163,184,0.45); border-radius: 16px; padding: 12px 14px; background: #ffffff; }
     .expand-box summary { cursor: pointer; font-weight: 700; color: #334155; }
     .expand-grid { margin-top: 12px; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
@@ -114,16 +122,39 @@
   {% else %}
   <div class="page">
     <div class="card topbar">
-      <div class="logo-block">
+      <div class="logo-block event-box">
         <span class="label-small">04.07 - 26.07</span>
         <div class="headline-text">
           <h1>tour with friends</h1>
           <p class="hero-note">Lade deine Aktivitäten als GPX-Datei hoch und sammle jeden Tag Punkte in der Trikotwertung. Alle Teilnehmer erhalten ein Goodie und die Spitzenfahrer sichern sich den Hauptgewinn.</p>
         </div>
+        <strong>Event-Teaser:</strong>
+        <p class="hero-note">Jede Ausfahrt bringt dich naeher an das gelbe Trikot - und an den Hauptgewinn.</p>
       </div>
-      <div class="bright-box">
-        <strong>🏆 Tägliche Etappensieger</strong>
-        <p class="hero-note">Jede Etappe zählt: Der Fahrer mit den meisten Tageskilometern steht oben und kommt dem Hauptgewinn einen Schritt näher.</p>
+      <div class="stage-hero">
+        <h3>🏆 Etappensieger des Tages</h3>
+        {% if daily_winners %}
+          <div class="winner-row">
+            {% if daily_winners[0].profile_image %}
+              <img class="winner-avatar" src="{{ url_for('uploaded_file', filename=daily_winners[0].profile_image) }}" alt="Profilbild von {{ daily_winners[0].user_name }}">
+            {% else %}
+              <span class="winner-placeholder">🚴</span>
+            {% endif %}
+            <div class="winner-text">
+              <span class="winner-name">{{ daily_winners[0].user_name }}</span>
+              <span class="winner-meta">{{ daily_winners[0].day }} · {{ daily_winners[0].distance_km }} km</span>
+            </div>
+          </div>
+          <p class="hero-note">🚴 Gelbes Trikot-Modus: Vollgas auf dem Rad und Platz 1 sichern.</p>
+        {% else %}
+          <div class="winner-row">
+            <span class="winner-placeholder">🚴</span>
+            <div class="winner-text">
+              <span class="winner-name">Noch kein Sieger</span>
+              <span class="winner-meta">Lade die erste Etappe hoch.</span>
+            </div>
+          </div>
+        {% endif %}
       </div>
     </div>
 
@@ -140,7 +171,7 @@
             <ol class="top-three">
               {% for entry in distance_leaderboard[:3] %}
                 <li>
-                  <span><span class="rank">#{{ loop.index }}</span> {{ entry.name }}</span>
+                  <span><span class="rank">{{ '🥇' if loop.index == 1 else '🥈' if loop.index == 2 else '🥉' }}</span> {{ entry.name }}</span>
                   <strong>{{ entry.total_distance_km|round(1) }} km</strong>
                 </li>
               {% else %}
@@ -155,7 +186,7 @@
             <ol class="top-three">
               {% for entry in elevation_leaderboard[:3] %}
                 <li>
-                  <span><span class="rank">#{{ loop.index }}</span> {{ entry.name }}</span>
+                  <span><span class="rank">{{ '🥇' if loop.index == 1 else '🥈' if loop.index == 2 else '🥉' }}</span> {{ entry.name }}</span>
                   <strong>{{ entry.total_elevation_m|round(1) }} m</strong>
                 </li>
               {% else %}
@@ -170,7 +201,7 @@
             <ol class="top-three">
               {% for entry in duration_leaderboard[:3] %}
                 <li>
-                  <span><span class="rank">#{{ loop.index }}</span> {{ entry.name }}</span>
+                  <span><span class="rank">{{ '🥇' if loop.index == 1 else '🥈' if loop.index == 2 else '🥉' }}</span> {{ entry.name }}</span>
                   <strong>{{ entry.total_duration_min|round(1) }} min</strong>
                 </li>
               {% else %}

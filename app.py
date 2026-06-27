@@ -207,7 +207,7 @@ def index():
     ).fetchall()
     daily_winners = conn.execute(
         """
-        SELECT strftime('%d.%m.%Y', r.created_at) AS day, r.user_id, r.distance_km, u.name as user_name
+        SELECT strftime('%d.%m.%Y', r.created_at) AS day, r.user_id, r.distance_km, u.name as user_name, u.profile_image as profile_image
         FROM rides r
         JOIN users u ON r.user_id = u.id
         WHERE r.id = (
