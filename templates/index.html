@@ -45,20 +45,18 @@
 
     .trikot-full { width: 100%; }
     .trikot-stage { display: grid; gap: 16px; }
-    .top-three-cards { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; }
-    .trikot-card { border-radius: 22px; padding: 18px; border: 1px solid rgba(15,23,42,0.12); display: grid; gap: 10px; position: relative; overflow: hidden; }
-    .trikot-card h3 { margin: 0; font-size: 1.35rem; font-weight: 900; }
-    .trikot-card p { margin: 0; font-size: 0.9rem; }
-    .trikot-yellow { background: linear-gradient(135deg, #fde047, #facc15); }
-    .trikot-green { background: linear-gradient(135deg, #bbf7d0, #4ade80); }
+    .top-three-cards { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 18px; }
+    .trikot-card { border-radius: 24px; padding: 24px; border: 3px solid rgba(15,23,42,0.16); background: #ffffff; display: grid; gap: 14px; min-height: 280px; }
+    .trikot-card h3 { margin: 0; font-size: 1.55rem; font-weight: 900; }
+    .trikot-card p { margin: 0; font-size: 1rem; color: #334155; }
+    .trikot-yellow { border-color: #eab308; }
+    .trikot-green { border-color: #16a34a; }
     .trikot-polka {
-      background:
-        radial-gradient(circle, #dc2626 0 7px, transparent 8px) 0 0 / 36px 36px,
-        radial-gradient(circle, #dc2626 0 7px, transparent 8px) 18px 18px / 36px 36px,
-        #ffffff;
+      border: 4px dotted #dc2626;
+      background: #ffffff;
     }
     .top-three { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
-    .top-three li { display: flex; justify-content: space-between; gap: 10px; font-size: 0.95rem; font-weight: 700; }
+    .top-three li { display: flex; justify-content: space-between; gap: 10px; font-size: 1.08rem; font-weight: 800; }
     .top-three .rank { background: rgba(15,23,42,0.08); border-radius: 999px; padding: 3px 8px; font-size: 0.8rem; }
     .expand-box { border: 1px dashed rgba(148,163,184,0.45); border-radius: 16px; padding: 12px 14px; background: #ffffff; }
     .expand-box summary { cursor: pointer; font-weight: 700; color: #334155; }
