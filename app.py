@@ -313,6 +313,15 @@ def index():
 
     daily_winner_homme = next((row for row in daily_winners_all if row["gender"] == "Homme"), None)
     daily_winner_femme = next((row for row in daily_winners_all if row["gender"] == "Femme"), None)
+    stage_days = []
+    stage_days_map = {}
+    for row in daily_winners_all:
+        day = row["day"]
+        if day not in stage_days_map:
+            stage_days_map[day] = {"day": day, "Femme": None, "Homme": None}
+            stage_days.append(stage_days_map[day])
+        stage_days_map[day][row["gender"]] = row
+
     rides = []
     if user:
         rides = conn.execute(
@@ -351,6 +360,7 @@ def index():
         daily_winners=daily_winners,
         daily_winner_homme=daily_winner_homme,
         daily_winner_femme=daily_winner_femme,
+        stage_days=stage_days,
         rides=rides,
     )
 

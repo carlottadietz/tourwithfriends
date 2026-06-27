@@ -103,6 +103,7 @@
     .login-card { background: rgba(255,255,255,0.98); border: 1px solid rgba(148,163,184,0.24); border-radius: 30px; padding: 28px; box-shadow: 0 24px 60px rgba(148,163,184,0.2); }
     .login-card h1 { font-size: clamp(2rem, 5vw, 3rem); margin-bottom: 8px; }
     .login-card p { margin: 0 0 16px; }
+    #login-form > label { font-size: 1rem; font-weight: 700; color: #334155; margin-bottom: -6px; }
 
     .form-card { background: #ffffff; border: 1px solid rgba(148,163,184,0.18); border-radius: 24px; padding: 24px; }
     form { display: grid; gap: 14px; }
@@ -163,6 +164,8 @@
     .card-hero { background: #ffffff; border: 1px solid rgba(148,163,184,0.18); border-radius: 24px; padding: 22px; }
     .stage-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
     .stage-list li { background: #f8fafc; border: 1px solid rgba(148,163,184,0.2); border-radius: 14px; padding: 10px 12px; display: grid; gap: 4px; }
+    .stage-day-grid { display: grid; gap: 6px; }
+    .stage-day-line { display: flex; justify-content: space-between; gap: 8px; font-size: 0.9rem; color: #334155; }
     .stats-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
     .metric-card { background: #f8fafc; border: 1px solid rgba(148,163,184,0.25); border-radius: 20px; padding: 20px; display: grid; gap: 10px; }
     .metric-title { color: #64748b; font-size: 0.9rem; text-transform: uppercase; letter-spacing: 0.16em; }
@@ -442,15 +445,32 @@
     <div class="layout-two">
       <div class="card card-hero">
         <div class="section-title">
-          <h2>Etappensieger {{ selected_gender }}</h2>
-          <span class="badge">Tageswertung {{ selected_gender }}</span>
+          <h2>Etappensieger je Tag</h2>
+          <span class="badge">Femme & Homme</span>
         </div>
         <ul class="stage-list">
-          {% if daily_winners %}
-            {% for stage in daily_winners %}
+          {% if stage_days %}
+            {% for stage_day in stage_days %}
               <li>
-                <strong>{{ stage.user_name }}</strong>
-                <span>{{ stage.day }} · {{ stage.distance_km }} km</span>
+                <strong>{{ stage_day.day }}</strong>
+                <div class="stage-day-grid">
+                  <div class="stage-day-line">
+                    <span>Femme</span>
+                    {% if stage_day.Femme %}
+                      <span>{{ stage_day.Femme.user_name }} · {{ stage_day.Femme.distance_km }} km · {{ stage_day.Femme.avg_speed_kmh|round(2) }} km/h</span>
+                    {% else %}
+                      <span class="muted">Kein Eintrag</span>
+                    {% endif %}
+                  </div>
+                  <div class="stage-day-line">
+                    <span>Homme</span>
+                    {% if stage_day.Homme %}
+                      <span>{{ stage_day.Homme.user_name }} · {{ stage_day.Homme.distance_km }} km · {{ stage_day.Homme.avg_speed_kmh|round(2) }} km/h</span>
+                    {% else %}
+                      <span class="muted">Kein Eintrag</span>
+                    {% endif %}
+                  </div>
+                </div>
               </li>
             {% endfor %}
           {% else %}
