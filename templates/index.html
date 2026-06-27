@@ -81,16 +81,28 @@
     .top-three-cards { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 18px; }
     .trikot-card { position: relative; border-radius: 24px; padding: 24px; border: 6px solid rgba(15,23,42,0.16); background: #ffffff; display: grid; gap: 14px; min-height: 280px; overflow: hidden; }
     .trikot-card::before { content: none; }
-    .trikot-card h3 { margin: 0; font-size: 1.55rem; font-weight: 900; }
-    .trikot-card p { margin: 0; font-size: 1rem; color: #334155; }
-    .trikot-yellow { border-color: #eab308; }
-    .trikot-green { border-color: #16a34a; }
+    .trikot-card h3 { margin: 0; font-size: 1.55rem; font-weight: 900; color: #0f172a; }
+    .trikot-card p { margin: 0; font-size: 1rem; color: #0f172a; }
+    .trikot-yellow {
+      border-color: #eab308;
+      background: linear-gradient(180deg, #fef3c7 0%, #fde68a 100%);
+    }
+    .trikot-white {
+      border-color: #cbd5e1;
+      background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+    }
+    .trikot-green {
+      border-color: #16a34a;
+      background: linear-gradient(180deg, #dcfce7 0%, #bbf7d0 100%);
+    }
     .trikot-polka {
-      border: 6px dotted #dc2626;
-      background: #ffffff;
+      border-color: #dc2626;
+      background-color: #fff5f5;
+      background-image: radial-gradient(circle, #dc2626 2.8px, transparent 3px);
+      background-size: 18px 18px;
     }
     .top-three { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
-    .top-three li { display: flex; justify-content: space-between; gap: 10px; font-size: 1.08rem; font-weight: 800; }
+    .top-three li { display: flex; justify-content: space-between; gap: 10px; font-size: 1.08rem; font-weight: 800; color: #0f172a; }
     .top-three .rank { display: inline-flex; align-items: center; justify-content: center; width: 34px; height: 34px; background: rgba(15,23,42,0.08); border-radius: 999px; font-size: 1rem; margin-right: 6px; }
     .expand-box { border: 1px dashed rgba(148,163,184,0.45); border-radius: 16px; padding: 12px 14px; background: #ffffff; }
     .expand-box summary { cursor: pointer; font-weight: 700; color: #334155; }
@@ -98,7 +110,7 @@
     .expand-col { background: #f8fafc; border: 1px solid rgba(148,163,184,0.2); border-radius: 14px; padding: 10px; }
     .expand-col h4 { margin: 0 0 8px; font-size: 0.92rem; }
     .expand-col ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
-    .expand-col li { display: flex; justify-content: space-between; gap: 8px; font-size: 0.9rem; }
+    .expand-col li { display: flex; justify-content: space-between; gap: 8px; font-size: 0.9rem; color: #0f172a; }
 
     .card-hero { background: #ffffff; border: 1px solid rgba(148,163,184,0.18); border-radius: 24px; padding: 22px; }
     .stage-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
@@ -151,8 +163,8 @@
       <div class="logo-block event-box">
         <span class="label-small">04.07 - 26.07</span>
         <div class="tour-flags" aria-label="Trikot-Kategorien">
-          <span class="tour-chip yellow">Maillot Jaune</span>
-          <span class="tour-chip polka">King of the Mountain</span>
+          <span class="tour-chip yellow">Gelbes Trikot</span>
+          <span class="tour-chip polka">Gepunktetes Trikot</span>
           <span class="tour-chip green">Sprintwertung</span>
         </div>
         <div class="headline-text">
@@ -206,7 +218,7 @@
         <div class="top-three-cards">
           <article class="trikot-card trikot-yellow">
             <h3>Gelbes Trikot</h3>
-            <p>Wer die meisten Kilometer in kuerzester Zeit faehrt.</p>
+            <p>Wer die meisten Kilometer in kürzester Zeit fährt.</p>
             <ol class="top-three">
               {% for entry in yellow_leaderboard[:3] %}
                 <li>
@@ -219,7 +231,7 @@
             </ol>
           </article>
 
-          <article class="trikot-card">
+          <article class="trikot-card trikot-white">
             <h3>Weißes Trikot</h3>
             <p>Wer die meisten Kilometer insgesamt gesammelt hat.</p>
             <ol class="top-three">
@@ -336,7 +348,7 @@
         <form action="{{ url_for('upload') }}" method="post" enctype="multipart/form-data">
           <label for="gpx_file">GPX-Datei</label>
           <input id="gpx_file" name="gpx_file" type="file" accept=".gpx" multiple required>
-          <div class="upload-hint"><span>Hinweis:</span> Alte Daten bleiben erhalten und werden dem aktuellen Profil hinzugefuegt. Aktivitaeten vor dem 04.07 werden nicht angenommen.</div>
+          <div class="upload-hint"><span>Hinweis:</span> Alte Daten bleiben erhalten und werden dem aktuellen Profil hinzugefuegt. Aktivitäten vor dem 04.07 werden nicht angenommen.</div>
           <button class="primary" type="submit">Upload starten</button>
         </form>
       </div>
