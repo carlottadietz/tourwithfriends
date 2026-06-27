@@ -206,12 +206,12 @@
         <div class="top-three-cards">
           <article class="trikot-card trikot-yellow">
             <h3>Gelbes Trikot</h3>
-            <p>Wer die meisten Kilometer in kuerzester Zeit faehrt (hoechster km/h-Schnitt).</p>
+            <p>Wer die meisten Kilometer in kuerzester Zeit faehrt.</p>
             <ol class="top-three">
               {% for entry in yellow_leaderboard[:3] %}
                 <li>
                   <span><span class="rank">{{ '🥇' if loop.index == 1 else '🥈' if loop.index == 2 else '🥉' }}</span> {{ entry.name }}</span>
-                  <strong>{{ entry.avg_speed_kmh|round(2) }} km/h</strong>
+                  <strong>{{ entry.total_distance_km|round(1) }} km · {{ entry.total_duration_min|round(1) }} min</strong>
                 </li>
               {% else %}
                 <li><span class="muted">Noch keine Einträge.</span></li>
@@ -272,7 +272,7 @@
               <h4>Gelbes Trikot</h4>
               <ul>
                 {% for entry in yellow_leaderboard[3:] %}
-                  <li><span>{{ loop.index + 3 }}. {{ entry.name }}</span><strong>{{ entry.avg_speed_kmh|round(2) }} km/h</strong></li>
+                  <li><span>{{ loop.index + 3 }}. {{ entry.name }}</span><strong>{{ entry.total_distance_km|round(1) }} km · {{ entry.total_duration_min|round(1) }} min</strong></li>
                 {% else %}
                   <li><span class="muted">Keine weiteren Einträge.</span></li>
                 {% endfor %}
