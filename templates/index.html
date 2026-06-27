@@ -22,8 +22,10 @@
     .stage-hero { background: linear-gradient(145deg, #fde68a, #facc15); border-radius: 24px; padding: 18px 18px; display: grid; gap: 10px; border: 2px solid #eab308; }
     .stage-hero h3 { margin: 0; font-size: 1.05rem; }
     .winner-row { display: flex; align-items: center; gap: 12px; }
-    .winner-avatar { width: 64px; height: 64px; border-radius: 999px; object-fit: cover; border: 3px solid #eab308; background: #fff; }
-    .winner-placeholder { width: 64px; height: 64px; border-radius: 999px; display: inline-flex; align-items: center; justify-content: center; font-size: 1.8rem; background: #fff7ed; border: 3px solid #eab308; }
+    .winner-cyclist { position: relative; width: 110px; height: 92px; display: flex; align-items: flex-end; justify-content: center; flex-shrink: 0; }
+    .winner-bike { font-size: 4.3rem; line-height: 1; }
+    .winner-head { position: absolute; top: 4px; left: 50%; transform: translateX(-50%); width: 42px; height: 42px; border-radius: 999px; object-fit: cover; border: 3px solid #eab308; background: #fff; }
+    .winner-head-placeholder { display: inline-flex; align-items: center; justify-content: center; font-size: 1.1rem; color: #0f172a; background: #fff7ed; }
     .winner-text { display: grid; gap: 2px; }
     .winner-name { font-size: 1rem; font-weight: 900; color: #0f172a; }
     .winner-meta { font-size: 0.9rem; color: #334155; }
@@ -99,7 +101,7 @@
   {% if not user %}
     <div class="login-shell">
       <div class="login-card">
-        <h1>tour with friends</h1>
+        <h1>tour with friends goes Tour de France</h1>
         <p>Bitte zuerst anmelden, dann öffnet sich dein Dashboard mit Upload, Trikotwertung und Etappensiegern.</p>
         <form id="login-form" action="{{ url_for('login') }}" method="post" enctype="multipart/form-data">
           <label for="name">Name</label>
@@ -125,21 +127,22 @@
       <div class="logo-block event-box">
         <span class="label-small">04.07 - 26.07</span>
         <div class="headline-text">
-          <h1>tour with friends</h1>
+          <h1>tour with friends goes Tour de France </h1>
           <p class="hero-note">Lade deine Aktivitäten als GPX-Datei hoch und sammle jeden Tag Punkte in der Trikotwertung. Alle Teilnehmer erhalten ein Goodie und die Spitzenfahrer sichern sich den Hauptgewinn.</p>
         </div>
-        <strong>Event-Teaser:</strong>
-        <p class="hero-note">Jede Ausfahrt bringt dich naeher an das gelbe Trikot - und an den Hauptgewinn.</p>
       </div>
       <div class="stage-hero">
         <h3>🏆 Etappensieger des Tages</h3>
         {% if daily_winners %}
           <div class="winner-row">
-            {% if daily_winners[0].profile_image %}
-              <img class="winner-avatar" src="{{ url_for('uploaded_file', filename=daily_winners[0].profile_image) }}" alt="Profilbild von {{ daily_winners[0].user_name }}">
-            {% else %}
-              <span class="winner-placeholder">🚴</span>
-            {% endif %}
+            <div class="winner-cyclist" aria-hidden="true">
+              <span class="winner-bike">🚴</span>
+              {% if daily_winners[0].profile_image %}
+                <img class="winner-head" src="{{ url_for('uploaded_file', filename=daily_winners[0].profile_image) }}" alt="">
+              {% else %}
+                <span class="winner-head winner-head-placeholder">🙂</span>
+              {% endif %}
+            </div>
             <div class="winner-text">
               <span class="winner-name">{{ daily_winners[0].user_name }}</span>
               <span class="winner-meta">{{ daily_winners[0].day }} · {{ daily_winners[0].distance_km }} km</span>
@@ -148,7 +151,10 @@
           <p class="hero-note">🚴 Gelbes Trikot-Modus: Vollgas auf dem Rad und Platz 1 sichern.</p>
         {% else %}
           <div class="winner-row">
-            <span class="winner-placeholder">🚴</span>
+            <div class="winner-cyclist" aria-hidden="true">
+              <span class="winner-bike">🚴</span>
+              <span class="winner-head winner-head-placeholder">🙂</span>
+            </div>
             <div class="winner-text">
               <span class="winner-name">Noch kein Sieger</span>
               <span class="winner-meta">Lade die erste Etappe hoch.</span>
