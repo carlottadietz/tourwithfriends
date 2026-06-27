@@ -1,7 +1,7 @@
 import os
 import sqlite3
 import uuid
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 from math import atan2, cos, radians, sin, sqrt
 from pathlib import Path
 import xml.etree.ElementTree as ET
@@ -15,6 +15,7 @@ app.config.update(
     DATABASE_PATH=os.environ.get("DATABASE_PATH", str(Path(__file__).resolve().parent / "tourwithfriends.db")),
     UPLOAD_FOLDER=os.environ.get("UPLOAD_FOLDER", str(Path(__file__).resolve().parent / "uploads")),
     MAX_CONTENT_LENGTH=16 * 1024 * 1024,
+    PERMANENT_SESSION_LIFETIME=timedelta(days=40),
 )
 
 
@@ -350,6 +351,7 @@ def login():
         user_id = cur.lastrowid
 
     conn.commit()
+    session.permanent = True
     session["user_id"] = user_id
     session["user_name"] = name
     return redirect(url_for("index"))
