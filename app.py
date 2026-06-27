@@ -166,10 +166,16 @@ def index():
     ).fetchall()
     daily_winners = conn.execute(
         """
-        SELECT r.created_at as day, r.user_id, r.distance_km, u.name as user_name
+        SELECT strftime('%d.%m.%Y', r.created_at) AS day, r.user_id, r.distance_km, u.name as user_name
         FROM rides r
         JOIN users u ON r.user_id = u.id
-        ORDER BY date(r.created_at) DESC, r.distance_km DESC
+        WHERE r.id = (
+            SELECT id FROM rides r2
+            WHERE date(r2.created_at) = date(r.created_at)
+            ORDER BY distance_km DESC, created_at ASC, id ASC
+            LIMIT 1
+        )
+        ORDER BY date(r.created_at) DESC
         """
     ).fetchall()
     rides = []
