@@ -21,8 +21,7 @@
     .page { max-width: 1180px; margin: 0 auto; display: grid; gap: 24px; }
     .card { background: rgba(255,255,255,0.97); border: 1px solid rgba(148,163,184,0.24); border-radius: 30px; padding: 24px; box-shadow: 0 24px 60px rgba(148,163,184,0.16); }
     .topbar { position: relative; overflow: hidden; display: grid; grid-template-columns: 2fr 1fr; gap: 20px; align-items: stretch; }
-    .topbar::before { content: ""; position: absolute; inset: 0; background: linear-gradient(90deg, rgba(29,78,216,0.06), transparent 40%, rgba(220,38,38,0.05)); pointer-events: none; }
-    .topbar::after { content: ""; position: absolute; left: 24px; right: 24px; top: 14px; height: 6px; border-radius: 999px; background: repeating-linear-gradient(90deg, var(--tour-blue) 0 18px, #ffffff 18px 36px, var(--tour-red) 36px 54px, #ffffff 54px 72px); opacity: 0.8; }
+    .topbar::before { content: ""; position: absolute; inset: 0; background: linear-gradient(90deg, rgba(29,78,216,0.14) 0 33.333%, rgba(255,255,255,0.22) 33.333% 66.666%, rgba(220,38,38,0.14) 66.666% 100%); pointer-events: none; }
     .logo-block { display: grid; gap: 12px; }
     .label-small { color: #ca8a04; font-size: 0.9rem; letter-spacing: 0.18em; text-transform: uppercase; }
     h1 { margin: 0; font-family: "Barlow Condensed", Inter, sans-serif; font-size: clamp(2.3rem, 4vw, 4rem); letter-spacing: 0.01em; text-transform: uppercase; color: var(--tour-ink); }
@@ -40,22 +39,16 @@
     .stage-hero { position: relative; overflow: hidden; background: linear-gradient(145deg, #fde68a, #facc15); border-radius: 24px; padding: 18px 18px; display: grid; gap: 10px; border: 2px solid #eab308; }
     .stage-hero::before { content: ""; position: absolute; right: -30px; top: -30px; width: 120px; height: 120px; border-radius: 999px; background: radial-gradient(circle, rgba(255,255,255,0.55), rgba(255,255,255,0)); }
     .stage-hero h3 { margin: 0; font-size: 1.05rem; }
-    .winner-row { display: flex; align-items: center; gap: 12px; }
-    .winner-cyclist { position: relative; width: 140px; height: 112px; flex-shrink: 0; }
-    .winner-wheel { position: absolute; bottom: 2px; width: 44px; height: 44px; border: 4px solid #334155; border-radius: 999px; background: rgba(255,255,255,0.36); }
-    .winner-wheel.left { left: 4px; }
-    .winner-wheel.right { right: 4px; }
-    .winner-frame { position: absolute; left: 32px; bottom: 28px; width: 76px; height: 6px; background: #0f172a; border-radius: 999px; transform: rotate(-16deg); }
-    .winner-frame::before { content: ""; position: absolute; left: 20px; top: -16px; width: 40px; height: 6px; background: #0f172a; border-radius: 999px; transform: rotate(28deg); }
-    .winner-frame::after { content: ""; position: absolute; left: 34px; top: 14px; width: 22px; height: 6px; background: #0f172a; border-radius: 999px; transform: rotate(55deg); }
-    .winner-rider { position: absolute; left: 52px; bottom: 34px; width: 50px; height: 68px; }
-    .winner-head { position: absolute; top: 0; left: 16px; width: 34px; height: 34px; border-radius: 999px; object-fit: cover; border: 3px solid #eab308; background: #fff; }
-    .winner-head-placeholder { display: inline-flex; align-items: center; justify-content: center; font-size: 0.95rem; color: #0f172a; background: #fff7ed; }
-    .winner-jersey { position: absolute; top: 30px; left: 8px; width: 34px; height: 20px; background: #facc15; border: 2px solid #eab308; border-radius: 10px 10px 8px 8px; }
-    .winner-shorts { position: absolute; top: 50px; left: 10px; width: 30px; height: 16px; background: #fbbf24; border: 2px solid #eab308; border-radius: 6px; }
-    .winner-leg { position: absolute; width: 22px; height: 6px; background: #334155; border-radius: 999px; }
-    .winner-leg.left { top: 60px; left: -2px; transform: rotate(25deg); }
-    .winner-leg.right { top: 64px; left: 22px; transform: rotate(-26deg); }
+    .winner-row { display: flex; align-items: center; gap: 14px; }
+    .winner-figure { position: relative; width: 166px; height: 190px; flex-shrink: 0; }
+    .winner-head { position: absolute; top: 4px; left: 50%; transform: translateX(-50%); width: 78px; height: 78px; border-radius: 999px; object-fit: cover; border: 4px solid #eab308; background: #fff; z-index: 2; }
+    .winner-head-placeholder { display: inline-flex; align-items: center; justify-content: center; font-size: 1.55rem; color: #0f172a; background: #fff7ed; }
+    .winner-shirt { position: absolute; top: 76px; left: 50%; transform: translateX(-50%); width: 136px; height: 102px; background: linear-gradient(180deg, #fde047 0%, #facc15 70%, #f4bf12 100%); border: 4px solid #eab308; border-radius: 24px 24px 18px 18px; }
+    .winner-shirt::before,
+    .winner-shirt::after { content: ""; position: absolute; top: 8px; width: 30px; height: 44px; background: #facc15; border: 4px solid #eab308; border-radius: 12px; }
+    .winner-shirt::before { left: -24px; transform: rotate(22deg); }
+    .winner-shirt::after { right: -24px; transform: rotate(-22deg); }
+    .winner-shirt-accent { position: absolute; top: 22px; left: 50%; transform: translateX(-50%); width: 66px; height: 8px; border-radius: 999px; background: rgba(255,255,255,0.75); }
     .winner-text { display: grid; gap: 2px; }
     .winner-name { font-size: 1rem; font-weight: 900; color: #0f172a; }
     .winner-meta { font-size: 0.9rem; color: #334155; }
@@ -87,7 +80,7 @@
     .trikot-stage { display: grid; gap: 16px; }
     .top-three-cards { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 18px; }
     .trikot-card { position: relative; border-radius: 24px; padding: 24px; border: 6px solid rgba(15,23,42,0.16); background: #ffffff; display: grid; gap: 14px; min-height: 280px; overflow: hidden; }
-    .trikot-card::before { content: ""; position: absolute; top: 0; left: 0; right: 0; height: 10px; background: repeating-linear-gradient(90deg, rgba(15,23,42,0.16) 0 12px, rgba(255,255,255,0.8) 12px 24px); }
+    .trikot-card::before { content: none; }
     .trikot-card h3 { margin: 0; font-size: 1.55rem; font-weight: 900; }
     .trikot-card p { margin: 0; font-size: 1rem; color: #334155; }
     .trikot-yellow { border-color: #eab308; }
@@ -171,20 +164,14 @@
         <h3>🏆 Etappensieger des Tages</h3>
         {% if daily_winners %}
           <div class="winner-row">
-            <div class="winner-cyclist">
-              <span class="winner-wheel left" aria-hidden="true"></span>
-              <span class="winner-wheel right" aria-hidden="true"></span>
-              <span class="winner-frame" aria-hidden="true"></span>
-              <span class="winner-rider" aria-hidden="true">
-                {% if daily_winners[0].profile_image %}
-                  <img class="winner-head" src="{{ url_for('uploaded_file', filename=daily_winners[0].profile_image) }}" alt="Profilbild von {{ daily_winners[0].user_name }}">
-                {% else %}
-                  <span class="winner-head winner-head-placeholder">🙂</span>
-                {% endif %}
-                <span class="winner-jersey"></span>
-                <span class="winner-shorts"></span>
-                <span class="winner-leg left"></span>
-                <span class="winner-leg right"></span>
+            <div class="winner-figure">
+              {% if daily_winners[0].profile_image %}
+                <img class="winner-head" src="{{ url_for('uploaded_file', filename=daily_winners[0].profile_image) }}" alt="Profilbild von {{ daily_winners[0].user_name }}">
+              {% else %}
+                <span class="winner-head winner-head-placeholder">🙂</span>
+              {% endif %}
+              <span class="winner-shirt" aria-hidden="true">
+                <span class="winner-shirt-accent"></span>
               </span>
             </div>
             <div class="winner-text">
@@ -195,16 +182,10 @@
           <p class="hero-note">🚴 Gelbes Trikot-Modus: Vollgas auf dem Rad und Platz 1 sichern.</p>
         {% else %}
           <div class="winner-row">
-            <div class="winner-cyclist" aria-hidden="true">
-              <span class="winner-wheel left"></span>
-              <span class="winner-wheel right"></span>
-              <span class="winner-frame"></span>
-              <span class="winner-rider">
-                <span class="winner-head winner-head-placeholder">🙂</span>
-                <span class="winner-jersey"></span>
-                <span class="winner-shorts"></span>
-                <span class="winner-leg left"></span>
-                <span class="winner-leg right"></span>
+            <div class="winner-figure" aria-hidden="true">
+              <span class="winner-head winner-head-placeholder">🙂</span>
+              <span class="winner-shirt">
+                <span class="winner-shirt-accent"></span>
               </span>
             </div>
             <div class="winner-text">
