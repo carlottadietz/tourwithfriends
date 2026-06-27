@@ -97,6 +97,7 @@ def haversine(lat1, lon1, lat2, lon2):
 
 PAUSE_THRESHOLD_SECONDS = 1800
 ELEVATION_HYSTERESIS_M = 4.5
+EVENT_START_MONTH_DAY = (7, 4)
 
 
 def calculate_ascent_hysteresis(elevations, threshold_m=ELEVATION_HYSTERESIS_M):
@@ -116,6 +117,14 @@ def calculate_ascent_hysteresis(elevations, threshold_m=ELEVATION_HYSTERESIS_M):
             total_ascent += current - previous
 
     return total_ascent
+
+
+def is_allowed_event_date(created_at_iso):
+    try:
+        activity_date = datetime.fromisoformat(created_at_iso).date()
+    except ValueError:
+        return False
+    return (activity_date.month, activity_date.day) >= EVENT_START_MONTH_DAY
 
 def parse_gpx_metrics(path):
     tree = ET.parse(path)
@@ -333,6 +342,11 @@ def upload():
             continue
 
         created_at = metrics["created_at"] or datetime.now(timezone.utc).replace(tzinfo=None).isoformat()
+        if not is_allowed_event_date(created_at):
+            if os.path.exists(gpx_path):
+                os.remove(gpx_path)
+            continue
+
         conn.execute(
             "INSERT INTO rides (user_id, filename, distance_km, elevation_m, duration_min, created_at) VALUES (?, ?, ?, ?, ?, ?)",
             (
