@@ -207,10 +207,16 @@ def index():
         current_leader = distance_leaderboard[0]
 
     stats = {
-        "distance": sum(entry["total_distance_km"] for entry in distance_leaderboard),
-        "elevation": sum(entry["total_elevation_m"] for entry in elevation_leaderboard),
-        "duration": sum(entry["total_duration_min"] for entry in duration_leaderboard),
+        "distance": 0.0,
+        "elevation": 0.0,
+        "duration": 0.0,
     }
+    if user:
+        stats = {
+            "distance": user["total_distance_km"],
+            "elevation": user["total_elevation_m"],
+            "duration": user["total_duration_min"],
+        }
 
     return render_template(
         "index.html",
@@ -306,6 +312,50 @@ def upload():
         ),
     )
     conn.commit()
+    return redirect(url_for("index"))
+
+
+@app.route("/rides/<int:ride_id>/delete", methods=["POST"])
+def delete_ride(ride_id):
+    user = get_current_user()
+    if not user:
+        return redirect(url_for("index"))
+
+    conn = get_db()
+    ride = conn.execute(
+        "SELECT id, user_id, filename FROM rides WHERE id = ? AND user_id = ?",
+        (ride_id, user["id"]),
+    ).fetchone()
+    if not ride:
+        return redirect(url_for("index"))
+
+    conn.execute("DELETE FROM rides WHERE id = ?", (ride_id,))
+    totals = conn.execute(
+        """
+        SELECT
+            COALESCE(SUM(distance_km), 0) AS total_distance_km,
+            COALESCE(SUM(elevation_m), 0) AS total_elevation_m,
+            COALESCE(SUM(duration_min), 0) AS total_duration_min
+        FROM rides
+        WHERE user_id = ?
+        """,
+        (user["id"],),
+    ).fetchone()
+    conn.execute(
+        "UPDATE users SET total_distance_km = ?, total_elevation_m = ?, total_duration_min = ? WHERE id = ?",
+        (
+            round(totals["total_distance_km"], 2),
+            round(totals["total_elevation_m"], 2),
+            round(totals["total_duration_min"], 2),
+            user["id"],
+        ),
+    )
+    conn.commit()
+
+    filepath = os.path.join(app.config["UPLOAD_FOLDER"], ride["filename"])
+    if os.path.exists(filepath):
+        os.remove(filepath)
+
     return redirect(url_for("index"))
 
 
