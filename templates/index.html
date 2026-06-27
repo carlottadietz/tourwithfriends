@@ -50,34 +50,27 @@
       background: #fff7bf;
       box-shadow: inset 0 0 0 1px rgba(255,255,255,0.55);
       overflow: hidden;
-    }
-    .winner-cutout {
-      position: absolute;
-      inset: 0;
-      background-image: url("{{ url_for('static', filename='etappensieger_cutout.png') }}");
-      background-position: center bottom;
-      background-repeat: no-repeat;
-      background-size: 205% auto;
+      display: flex;
+      align-items: center;
+      justify-content: center;
     }
     .winner-head {
-      position: absolute;
-      top: 32px;
-      left: 50%;
-      transform: translateX(-50%);
-      width: 60px;
-      height: 60px;
-      border-radius: 999px;
+      width: 100%;
+      height: 100%;
+      border-radius: 0;
       object-fit: cover;
-      border: 4px solid #f8fafc;
-      box-shadow: 0 8px 16px rgba(15,23,42,0.2);
       background: #fff;
-      z-index: 2;
     }
     .winner-head-placeholder {
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      font-size: 1.35rem;
+      width: 92px;
+      height: 92px;
+      border-radius: 999px;
+      border: 4px solid #f8fafc;
+      box-shadow: 0 8px 16px rgba(15,23,42,0.2);
+      font-size: 2rem;
       color: #0f172a;
       background: #fff;
     }
@@ -211,11 +204,10 @@
         {% if daily_winners %}
           <div class="winner-row">
             <div class="winner-photo-figure">
-              <span class="winner-cutout" aria-hidden="true"></span>
               {% if daily_winners[0].profile_image %}
                 <img class="winner-head" src="{{ url_for('uploaded_file', filename=daily_winners[0].profile_image) }}" alt="Profilbild von {{ daily_winners[0].user_name }}">
               {% else %}
-                <span class="winner-head winner-head-placeholder">🙂</span>
+                <span class="winner-head-placeholder">🙂</span>
               {% endif %}
             </div>
             <div class="winner-text">
@@ -227,8 +219,7 @@
         {% else %}
           <div class="winner-row">
             <div class="winner-photo-figure" aria-hidden="true">
-              <span class="winner-cutout"></span>
-              <span class="winner-head winner-head-placeholder">🙂</span>
+              <span class="winner-head-placeholder">🙂</span>
             </div>
             <div class="winner-text">
               <span class="winner-name">Noch kein Sieger</span>
