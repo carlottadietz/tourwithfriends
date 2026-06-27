@@ -4,22 +4,41 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Tour mit Freunden</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;700;800&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://unpkg.com/modern-css-reset/dist/reset.min.css">
   <style>
-    :root { color-scheme: light; }
-    body { font-family: Inter, system-ui, sans-serif; min-height: 100vh; background: linear-gradient(180deg, #f8fafc 0%, #ffffff 45%, #e2e8f0 100%); color: #1f2937; margin: 0; padding: 24px; }
+    :root {
+      color-scheme: light;
+      --tour-yellow: #facc15;
+      --tour-yellow-dark: #eab308;
+      --tour-blue: #1d4ed8;
+      --tour-red: #dc2626;
+      --tour-ink: #0f172a;
+    }
+    body { font-family: Inter, system-ui, sans-serif; min-height: 100vh; background: radial-gradient(circle at 12% 8%, #fff7cc 0%, #fefce8 20%, transparent 45%), linear-gradient(180deg, #f8fafc 0%, #ffffff 40%, #e2e8f0 100%); color: #1f2937; margin: 0; padding: 24px; }
     .page { max-width: 1180px; margin: 0 auto; display: grid; gap: 24px; }
     .card { background: rgba(255,255,255,0.97); border: 1px solid rgba(148,163,184,0.24); border-radius: 30px; padding: 24px; box-shadow: 0 24px 60px rgba(148,163,184,0.16); }
-    .topbar { display: grid; grid-template-columns: 2fr 1fr; gap: 20px; align-items: stretch; }
+    .topbar { position: relative; overflow: hidden; display: grid; grid-template-columns: 2fr 1fr; gap: 20px; align-items: stretch; }
+    .topbar::before { content: ""; position: absolute; inset: 0; background: linear-gradient(90deg, rgba(29,78,216,0.06), transparent 40%, rgba(220,38,38,0.05)); pointer-events: none; }
+    .topbar::after { content: ""; position: absolute; left: 24px; right: 24px; top: 14px; height: 6px; border-radius: 999px; background: repeating-linear-gradient(90deg, var(--tour-blue) 0 18px, #ffffff 18px 36px, var(--tour-red) 36px 54px, #ffffff 54px 72px); opacity: 0.8; }
     .logo-block { display: grid; gap: 12px; }
     .label-small { color: #ca8a04; font-size: 0.9rem; letter-spacing: 0.18em; text-transform: uppercase; }
-    h1 { margin: 0; font-size: clamp(2.3rem, 4vw, 4rem); letter-spacing: -0.04em; }
+    h1 { margin: 0; font-family: "Barlow Condensed", Inter, sans-serif; font-size: clamp(2.3rem, 4vw, 4rem); letter-spacing: 0.01em; text-transform: uppercase; color: var(--tour-ink); }
     h2 { margin: 0; font-size: 1.2rem; letter-spacing: -0.02em; }
     p, label { color: #475569; line-height: 1.6; }
     .headline-text { display: grid; gap: 10px; max-width: 700px; }
-    .event-box { background: linear-gradient(145deg, #ffffff, #f8fafc); border-radius: 24px; padding: 20px 24px; border: 1px solid rgba(148,163,184,0.25); box-shadow: 0 18px 36px rgba(148,163,184,0.14); }
+    .event-box { position: relative; background: linear-gradient(145deg, #ffffff, #f8fafc); border-radius: 24px; padding: 20px 24px; border: 1px solid rgba(148,163,184,0.25); box-shadow: 0 18px 36px rgba(148,163,184,0.14); }
     .event-box strong { display: block; font-size: 1rem; margin-bottom: 6px; }
-    .stage-hero { background: linear-gradient(145deg, #fde68a, #facc15); border-radius: 24px; padding: 18px 18px; display: grid; gap: 10px; border: 2px solid #eab308; }
+    .event-box::after { content: ""; position: absolute; right: 20px; bottom: 16px; width: 110px; height: 44px; background: linear-gradient(120deg, rgba(148,163,184,0.2), rgba(148,163,184,0.05)); clip-path: polygon(0 100%, 16% 62%, 33% 82%, 50% 36%, 66% 64%, 82% 20%, 100% 50%, 100% 100%); }
+    .tour-flags { display: flex; flex-wrap: wrap; gap: 8px; }
+    .tour-chip { display: inline-flex; align-items: center; gap: 6px; padding: 6px 10px; border-radius: 999px; font-size: 0.74rem; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; color: #1e293b; background: #fff; border: 1px solid rgba(148,163,184,0.3); }
+    .tour-chip.yellow { background: #fef3c7; border-color: rgba(234,179,8,0.45); }
+    .tour-chip.polka { background: radial-gradient(circle, rgba(220,38,38,0.14) 0 2px, #fff 3px); background-size: 10px 10px; border-color: rgba(220,38,38,0.4); }
+    .tour-chip.green { background: #dcfce7; border-color: rgba(22,163,74,0.45); }
+    .stage-hero { position: relative; overflow: hidden; background: linear-gradient(145deg, #fde68a, #facc15); border-radius: 24px; padding: 18px 18px; display: grid; gap: 10px; border: 2px solid #eab308; }
+    .stage-hero::before { content: ""; position: absolute; right: -30px; top: -30px; width: 120px; height: 120px; border-radius: 999px; background: radial-gradient(circle, rgba(255,255,255,0.55), rgba(255,255,255,0)); }
     .stage-hero h3 { margin: 0; font-size: 1.05rem; }
     .winner-row { display: flex; align-items: center; gap: 12px; }
     .winner-cyclist { position: relative; width: 140px; height: 112px; flex-shrink: 0; }
@@ -67,7 +86,8 @@
     .trikot-full { width: 100%; }
     .trikot-stage { display: grid; gap: 16px; }
     .top-three-cards { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 18px; }
-    .trikot-card { border-radius: 24px; padding: 24px; border: 6px solid rgba(15,23,42,0.16); background: #ffffff; display: grid; gap: 14px; min-height: 280px; }
+    .trikot-card { position: relative; border-radius: 24px; padding: 24px; border: 6px solid rgba(15,23,42,0.16); background: #ffffff; display: grid; gap: 14px; min-height: 280px; overflow: hidden; }
+    .trikot-card::before { content: ""; position: absolute; top: 0; left: 0; right: 0; height: 10px; background: repeating-linear-gradient(90deg, rgba(15,23,42,0.16) 0 12px, rgba(255,255,255,0.8) 12px 24px); }
     .trikot-card h3 { margin: 0; font-size: 1.55rem; font-weight: 900; }
     .trikot-card p { margin: 0; font-size: 1rem; color: #334155; }
     .trikot-yellow { border-color: #eab308; }
@@ -137,6 +157,11 @@
     <div class="card topbar">
       <div class="logo-block event-box">
         <span class="label-small">04.07 - 26.07</span>
+        <div class="tour-flags" aria-label="Trikot-Kategorien">
+          <span class="tour-chip yellow">Maillot Jaune</span>
+          <span class="tour-chip polka">King of the Mountain</span>
+          <span class="tour-chip green">Sprintwertung</span>
+        </div>
         <div class="headline-text">
           <h1>tour with friends goes Tour de France </h1>
           <p class="hero-note">Lade deine Aktivitäten als GPX-Datei hoch und sammle jeden Tag Punkte in der Trikotwertung. Alle Teilnehmer erhalten ein Goodie und die Spitzenfahrer sichern sich den Hauptgewinn.</p>
