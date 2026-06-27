@@ -361,6 +361,36 @@ def logout():
     return redirect(url_for("index"))
 
 
+@app.route("/profile-image", methods=["POST"])
+def update_profile_image():
+    user = get_current_user()
+    if not user:
+        return redirect(url_for("index"))
+
+    profile_image = request.files.get("profile_image")
+    if not profile_image or not profile_image.filename:
+        return redirect(url_for("index"))
+    if not allowed_image(profile_image.filename):
+        return redirect(url_for("index"))
+
+    filename = secure_filename(profile_image.filename)
+    filename = f"{uuid.uuid4().hex}_{filename}"
+    filepath = os.path.join(app.config["UPLOAD_FOLDER"], filename)
+    profile_image.save(filepath)
+
+    conn = get_db()
+    conn.execute("UPDATE users SET profile_image = ? WHERE id = ?", (filename, user["id"]))
+    conn.commit()
+
+    old_profile = user["profile_image"]
+    if old_profile and old_profile != filename:
+        old_path = os.path.join(app.config["UPLOAD_FOLDER"], old_profile)
+        if os.path.exists(old_path):
+            os.remove(old_path)
+
+    return redirect(url_for("index"))
+
+
 @app.route("/upload", methods=["POST"])
 def upload():
     if not get_current_user():

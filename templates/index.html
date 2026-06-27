@@ -107,6 +107,9 @@
     .upload-hint span { font-weight: 700; }
     .user-pill { display: inline-flex; align-items: center; gap: 12px; background: #f8fafc; border: 1px solid rgba(148,163,184,0.24); border-radius: 999px; padding: 12px 16px; max-width: fit-content; }
     .avatar { width: 42px; height: 42px; border-radius: 999px; object-fit: cover; }
+    .profile-update-form { margin-top: 14px; display: grid; gap: 8px; }
+    .profile-update-form input { padding: 10px 12px; }
+    .profile-update-form button { width: fit-content; }
 
     .trikot-full {
       width: 100%;
@@ -364,6 +367,11 @@
           {% endif %}
           <span><strong>{{ user.name }}</strong></span>
         </div>
+        <form class="profile-update-form" action="{{ url_for('update_profile_image') }}" method="post" enctype="multipart/form-data">
+          <label for="new_profile_image">Profilbild ändern</label>
+          <input id="new_profile_image" name="profile_image" type="file" accept="image/*" required>
+          <button class="primary" type="submit">Neues Profilbild speichern</button>
+        </form>
         <p class="hero-note" style="margin-top: 12px;">Du bist angemeldet und kannst jetzt GPX-Dateien hochladen.</p>
       </div>
 
