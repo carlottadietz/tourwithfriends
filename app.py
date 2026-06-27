@@ -309,38 +309,57 @@ def upload():
     if not get_current_user():
         return redirect(url_for("index"))
 
-    gpx_file = request.files.get("gpx_file")
-    if not gpx_file or not gpx_file.filename or not allowed_gpx(gpx_file.filename):
+    upload_files = request.files.getlist("gpx_file")
+    valid_files = [f for f in upload_files if f and f.filename and allowed_gpx(f.filename)]
+    if not valid_files:
         return redirect(url_for("index"))
 
-    filename = secure_filename(gpx_file.filename)
-    filename = f"{uuid.uuid4().hex}_{filename}"
-    gpx_path = os.path.join(app.config["UPLOAD_FOLDER"], filename)
-    gpx_file.save(gpx_path)
-    metrics = parse_gpx_metrics(gpx_path)
-    created_at = metrics["created_at"] or datetime.now(timezone.utc).replace(tzinfo=None).isoformat()
-
     conn = get_db()
-    conn.execute(
-        "INSERT INTO rides (user_id, filename, distance_km, elevation_m, duration_min, created_at) VALUES (?, ?, ?, ?, ?, ?)",
-        (
-            session["user_id"],
-            filename,
-            metrics["distance_km"],
-            metrics["elevation_m"],
-            metrics["duration_min"],
-            created_at,
-        ),
-    )
-    conn.execute(
-        "UPDATE users SET total_distance_km = total_distance_km + ?, total_elevation_m = total_elevation_m + ?, total_duration_min = total_duration_min + ? WHERE id = ?",
-        (
-            metrics["distance_km"],
-            metrics["elevation_m"],
-            metrics["duration_min"],
-            session["user_id"],
-        ),
-    )
+    total_distance = 0.0
+    total_elevation = 0.0
+    total_duration = 0.0
+
+    for gpx_file in valid_files:
+        filename = secure_filename(gpx_file.filename)
+        filename = f"{uuid.uuid4().hex}_{filename}"
+        gpx_path = os.path.join(app.config["UPLOAD_FOLDER"], filename)
+        gpx_file.save(gpx_path)
+
+        try:
+            metrics = parse_gpx_metrics(gpx_path)
+        except Exception:
+            if os.path.exists(gpx_path):
+                os.remove(gpx_path)
+            continue
+
+        created_at = metrics["created_at"] or datetime.now(timezone.utc).replace(tzinfo=None).isoformat()
+        conn.execute(
+            "INSERT INTO rides (user_id, filename, distance_km, elevation_m, duration_min, created_at) VALUES (?, ?, ?, ?, ?, ?)",
+            (
+                session["user_id"],
+                filename,
+                metrics["distance_km"],
+                metrics["elevation_m"],
+                metrics["duration_min"],
+                created_at,
+            ),
+        )
+
+        total_distance += metrics["distance_km"]
+        total_elevation += metrics["elevation_m"]
+        total_duration += metrics["duration_min"]
+
+    if total_distance or total_elevation or total_duration:
+        conn.execute(
+            "UPDATE users SET total_distance_km = total_distance_km + ?, total_elevation_m = total_elevation_m + ?, total_duration_min = total_duration_min + ? WHERE id = ?",
+            (
+                round(total_distance, 2),
+                round(total_elevation, 2),
+                round(total_duration, 2),
+                session["user_id"],
+            ),
+        )
+
     conn.commit()
     return redirect(url_for("index"))
 

@@ -93,21 +93,21 @@
   {% if not user %}
     <div class="login-shell">
       <div class="login-card">
-        <h1>Tour mit Freunden</h1>
-        <p>Bitte zuerst anmelden, dann oeffnet sich dein Dashboard mit Upload, Trikotwertung und Etappensiegern.</p>
+        <h1>tour with friends</h1>
+        <p>Bitte zuerst anmelden, dann öffnet sich dein Dashboard mit Upload, Trikotwertung und Etappensiegern.</p>
         <form id="login-form" action="{{ url_for('login') }}" method="post" enctype="multipart/form-data">
           <label for="name">Name</label>
           <input id="name" name="name" placeholder="z. B. Lotti" required>
           {% if users %}
-            <label for="existing_user">Bestehenden Namen waehlen</label>
+            <label for="existing_user">Bestehenden Namen wählen</label>
             <select id="existing_user" name="existing_user">
-              <option value="">- auswaehlen -</option>
+              <option value="">- auswählen -</option>
               {% for user_option in users %}
                 <option value="{{ user_option.name }}" data-has-image="{{ '1' if user_option.profile_image else '0' }}">{{ user_option.name }}</option>
               {% endfor %}
             </select>
           {% endif %}
-          <label for="profile_image">Profilbild (verpflichtend fuer neue Profile)</label>
+          <label for="profile_image">Profilbild (verpflichtend für neue Profile)</label>
           <input id="profile_image" name="profile_image" type="file" accept="image/*" required>
           <button id="login-submit" class="primary" type="submit">Anmelden und starten</button>
         </form>
@@ -119,13 +119,13 @@
       <div class="logo-block">
         <span class="label-small">04.07 - 26.07</span>
         <div class="headline-text">
-          <h1>Tour With Friends</h1>
+          <h1>tour with friends</h1>
           <p class="hero-note">Lade deine Aktivitäten als GPX-Datei hoch und sammle jeden Tag Punkte in der Trikotwertung. Alle Teilnehmer erhalten ein Goodie und die Spitzenfahrer sichern sich den Hauptgewinn.</p>
         </div>
       </div>
       <div class="bright-box">
-        <strong>🏆 Tägliche Challenge</strong>
-        <p class="hero-note">Jede Etappe zählt: Der Tagesbeste steht oben und kommt dem Hauptgewinn einen Schritt näher.</p>
+        <strong>🏆 Tägliche Etappensieger</strong>
+        <p class="hero-note">Jede Etappe zählt: Der Fahrer mit den meisten Tageskilometern steht oben und kommt dem Hauptgewinn einen Schritt näher.</p>
       </div>
     </div>
 
@@ -242,7 +242,7 @@
         </div>
         <form action="{{ url_for('upload') }}" method="post" enctype="multipart/form-data">
           <label for="gpx_file">GPX-Datei</label>
-          <input id="gpx_file" name="gpx_file" type="file" accept=".gpx" required>
+          <input id="gpx_file" name="gpx_file" type="file" accept=".gpx" multiple required>
           <div class="upload-hint"><span>Hinweis:</span> Alte Daten bleiben erhalten und werden dem aktuellen Profil hinzugefuegt.</div>
           <button class="primary" type="submit">Upload starten</button>
         </form>
