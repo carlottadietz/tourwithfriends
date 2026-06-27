@@ -1,6 +1,7 @@
 import os
 import sqlite3
 import uuid
+from datetime import datetime, timezone
 from math import atan2, cos, radians, sin, sqrt
 from pathlib import Path
 import xml.etree.ElementTree as ET
@@ -26,7 +27,9 @@ def init_db():
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             name TEXT UNIQUE NOT NULL,
             profile_image TEXT,
-            total_distance_km REAL DEFAULT 0
+            total_distance_km REAL DEFAULT 0,
+            total_elevation_m REAL DEFAULT 0,
+            total_duration_min REAL DEFAULT 0
         )
         """
     )
@@ -37,6 +40,8 @@ def init_db():
             user_id INTEGER NOT NULL,
             filename TEXT NOT NULL,
             distance_km REAL NOT NULL,
+            elevation_m REAL DEFAULT 0,
+            duration_min REAL DEFAULT 0,
             created_at TEXT NOT NULL,
             FOREIGN KEY(user_id) REFERENCES users(id)
         )
@@ -90,7 +95,7 @@ def haversine(lat1, lon1, lat2, lon2):
     return radius * c
 
 
-def parse_gpx_distance(path):
+def parse_gpx_metrics(path):
     tree = ET.parse(path)
     root = tree.getroot()
     points = []
@@ -98,37 +103,95 @@ def parse_gpx_distance(path):
         if element.tag.endswith("trkpt"):
             lat = float(element.attrib.get("lat", "0"))
             lon = float(element.attrib.get("lon", "0"))
-            points.append((lat, lon))
-    if len(points) < 2:
-        return 0.0
+            ele = None
+            time_text = None
+            for child in element:
+                if child.tag.endswith("ele"):
+                    ele = float(child.text or 0)
+                elif child.tag.endswith("time"):
+                    time_text = child.text
+            points.append({"lat": lat, "lon": lon, "ele": ele or 0, "time": time_text})
 
-    total = 0.0
+    if len(points) < 2:
+        return {"distance_km": 0.0, "elevation_m": 0.0, "duration_min": 0.0}
+
+    total_distance = 0.0
+    total_elevation = 0.0
     previous = None
+    start_time = None
+    end_time = None
     for point in points:
         if previous is not None:
-            total += haversine(previous[0], previous[1], point[0], point[1])
+            total_distance += haversine(previous["lat"], previous["lon"], point["lat"], point["lon"])
+            delta_elevation = point["ele"] - previous["ele"]
+            if delta_elevation > 0:
+                total_elevation += delta_elevation
         previous = point
-    return round(total, 2)
+
+        if point["time"]:
+            try:
+                parsed_time = datetime.fromisoformat(point["time"].replace("Z", "+00:00"))
+            except ValueError:
+                parsed_time = None
+            if parsed_time is not None:
+                if start_time is None:
+                    start_time = parsed_time
+                end_time = parsed_time
+
+    if start_time and end_time:
+        duration_minutes = max((end_time - start_time).total_seconds() / 60.0, 0.0)
+    else:
+        duration_minutes = 0.0
+
+    return {
+        "distance_km": round(total_distance, 2),
+        "elevation_m": round(total_elevation, 2),
+        "duration_min": round(duration_minutes, 2),
+    }
 
 
 @app.route("/")
 def index():
     user = get_current_user()
-    leaderboard = get_db().execute(
+    conn = get_db()
+    users = conn.execute("SELECT id, name FROM users ORDER BY name ASC").fetchall()
+    distance_leaderboard = conn.execute(
         "SELECT id, name, profile_image, total_distance_km FROM users ORDER BY total_distance_km DESC, name ASC"
+    ).fetchall()
+    elevation_leaderboard = conn.execute(
+        "SELECT id, name, profile_image, total_elevation_m FROM users ORDER BY total_elevation_m DESC, name ASC"
+    ).fetchall()
+    duration_leaderboard = conn.execute(
+        "SELECT id, name, profile_image, total_duration_min FROM users ORDER BY total_duration_min DESC, name ASC"
+    ).fetchall()
+    daily_winners = conn.execute(
+        "SELECT DATE(created_at) as day, user_id, filename, distance_km FROM rides ORDER BY day DESC, distance_km DESC"
     ).fetchall()
     rides = []
     if user:
-        rides = get_db().execute(
+        rides = conn.execute(
             "SELECT * FROM rides WHERE user_id = ? ORDER BY created_at DESC LIMIT 5",
             (user["id"],),
         ).fetchall()
-    return render_template("index.html", user=user, leaderboard=leaderboard, rides=rides)
+
+    return render_template(
+        "index.html",
+        user=user,
+        users=users,
+        distance_leaderboard=distance_leaderboard,
+        elevation_leaderboard=elevation_leaderboard,
+        duration_leaderboard=duration_leaderboard,
+        daily_winners=daily_winners,
+        rides=rides,
+    )
 
 
 @app.route("/login", methods=["POST"])
 def login():
+    selected_name = request.form.get("existing_user", "").strip()
     name = request.form.get("name", "").strip()
+    if selected_name:
+        name = selected_name
     if not name:
         return redirect(url_for("index"))
 
@@ -178,16 +241,27 @@ def upload():
     filename = f"{uuid.uuid4().hex}_{filename}"
     gpx_path = os.path.join(app.config["UPLOAD_FOLDER"], filename)
     gpx_file.save(gpx_path)
-    distance = parse_gpx_distance(gpx_path)
+    distance = parse_gpx_metrics(gpx_path)
 
     conn = get_db()
     conn.execute(
-        "INSERT INTO rides (user_id, filename, distance_km, created_at) VALUES (?, ?, ?, datetime('now'))",
-        (session["user_id"], filename, distance),
+        "INSERT INTO rides (user_id, filename, distance_km, elevation_m, duration_min, created_at) VALUES (?, ?, ?, ?, ?, datetime('now'))",
+        (
+            session["user_id"],
+            filename,
+            distance["distance_km"],
+            distance["elevation_m"],
+            distance["duration_min"],
+        ),
     )
     conn.execute(
-        "UPDATE users SET total_distance_km = total_distance_km + ? WHERE id = ?",
-        (distance, session["user_id"]),
+        "UPDATE users SET total_distance_km = total_distance_km + ?, total_elevation_m = total_elevation_m + ?, total_duration_min = total_duration_min + ? WHERE id = ?",
+        (
+            distance["distance_km"],
+            distance["elevation_m"],
+            distance["duration_min"],
+            session["user_id"],
+        ),
     )
     conn.commit()
     return redirect(url_for("index"))

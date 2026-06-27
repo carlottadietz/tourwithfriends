@@ -3,7 +3,7 @@ import tempfile
 import unittest
 from io import BytesIO
 
-from app import app, init_db
+from app import app, init_db, parse_gpx_metrics
 
 
 class TourWithFriendsTests(unittest.TestCase):
@@ -44,6 +44,40 @@ class TourWithFriendsTests(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertIn(b"Anna", response.data)
         self.assertIn(b"Leaderboard", response.data)
+
+    def test_existing_user_can_log_in_again(self):
+        self.client.post(
+            "/login",
+            data={"name": "Anna"},
+            follow_redirects=True,
+        )
+        response = self.client.post(
+            "/login",
+            data={"existing_user": "Anna"},
+            follow_redirects=True,
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertIn(b"Hallo, Anna", response.data)
+
+    def test_parse_gpx_metrics_reads_distance_elevation_and_duration(self):
+        gpx_content = """<?xml version='1.0' encoding='UTF-8'?>
+        <gpx version='1.1' creator='test'>
+          <trk>
+            <trkseg>
+              <trkpt lat='48.8566' lon='2.3522'><ele>100</ele><time>2026-07-04T10:00:00Z</time></trkpt>
+              <trkpt lat='48.8576' lon='2.3532'><ele>120</ele><time>2026-07-04T10:10:00Z</time></trkpt>
+            </trkseg>
+          </trk>
+        </gpx>"""
+        path = os.path.join(self.tmp_dir.name, "ride.gpx")
+        with open(path, "w", encoding="utf-8") as handle:
+            handle.write(gpx_content)
+
+        metrics = parse_gpx_metrics(path)
+        self.assertGreater(metrics["distance_km"], 0)
+        self.assertGreater(metrics["elevation_m"], 0)
+        self.assertGreater(metrics["duration_min"], 0)
 
 
 if __name__ == "__main__":
