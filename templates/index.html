@@ -3,21 +3,92 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Neue Website</title>
+  <title>Tour With Friends</title>
   <link rel="stylesheet" href="https://unpkg.com/modern-css-reset/dist/reset.min.css">
   <style>
-    body { font-family: Inter, system-ui, sans-serif; min-height: 100vh; display: grid; place-items: center; background: linear-gradient(135deg, #0f172a, #1e293b); color: white; margin: 0; }
-    .card { max-width: 720px; width: 100%; background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.16); border-radius: 28px; padding: 40px; box-shadow: 0 32px 80px rgba(0,0,0,0.35); }
-    h1 { margin-top: 0; font-size: clamp(2.5rem, 5vw, 4rem); }
-    p { color: #cbd5e1; font-size: 1.05rem; line-height: 1.8; }
-    .button { display: inline-flex; align-items: center; justify-content: center; gap: 10px; padding: 14px 22px; background: #facc15; color: #0f172a; font-weight: 800; border-radius: 999px; text-decoration: none; border: none; cursor: pointer; margin-top: 24px; }
+    :root { color-scheme: dark; }
+    body { font-family: Inter, system-ui, sans-serif; min-height: 100vh; background: linear-gradient(135deg, #0f172a, #1e293b); color: #f8fafc; margin: 0; padding: 32px 16px 48px; }
+    .container { max-width: 960px; margin: 0 auto; display: grid; gap: 24px; }
+    .card { background: rgba(15,23,42,0.86); border: 1px solid rgba(255,255,255,0.12); border-radius: 24px; padding: 24px; box-shadow: 0 20px 50px rgba(0,0,0,0.28); }
+    h1, h2, h3 { margin-top: 0; }
+    p { color: #cbd5e1; line-height: 1.7; }
+    form { display: grid; gap: 12px; }
+    input, button { border-radius: 12px; border: 1px solid rgba(255,255,255,0.16); padding: 12px 14px; font: inherit; }
+    button { background: #facc15; color: #0f172a; font-weight: 700; cursor: pointer; }
+    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 20px; }
+    .leaderboard li, .ride-item { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid rgba(255,255,255,0.08); }
+    .leaderboard { list-style: none; padding: 0; margin: 0; }
+    .user-pill { display: inline-flex; align-items: center; gap: 10px; background: rgba(250,204,21,0.16); padding: 8px 12px; border-radius: 999px; }
+    .avatar { width: 44px; height: 44px; border-radius: 50%; object-fit: cover; }
+    .muted { color: #94a3b8; font-size: 0.92rem; }
   </style>
 </head>
 <body>
-  <div class="card">
-    <h1>Willkommen zu deiner neuen Website</h1>
-    <p>Dies ist der Startpunkt für dein neues Projekt. Du kannst hier später beliebige Inhalte, Uploads und Challenge-Features hinzufügen.</p>
-    <a class="button" href="https://render.com">Deploy mit Render</a>
+  <div class="container">
+    <div class="card">
+      <h1>Tour de France mit Freunden tracken</h1>
+      <p>Melde dich mit Namen und Profilbild an, lade deine GPX-Dateien hoch und sehe, wer in der Tour-Community am meisten Kilometer gesammelt hat.</p>
+
+      {% if user %}
+        <div class="user-pill">
+          {% if user.profile_image %}
+            <img class="avatar" src="{{ url_for('uploaded_file', filename=user.profile_image) }}" alt="Profilbild von {{ user.name }}">
+          {% endif %}
+          <strong>Hallo, {{ user.name }}</strong>
+        </div>
+        <form action="{{ url_for('upload') }}" method="post" enctype="multipart/form-data" style="margin-top: 16px;">
+          <label for="gpx_file">GPX-Datei hochladen</label>
+          <input id="gpx_file" name="gpx_file" type="file" accept=".gpx" required>
+          <button type="submit">Runde speichern</button>
+        </form>
+        <form action="{{ url_for('logout') }}" method="post" style="margin-top: 12px;">
+          <button type="submit">Abmelden</button>
+        </form>
+      {% else %}
+        <form action="{{ url_for('login') }}" method="post" enctype="multipart/form-data">
+          <label for="name">Dein Name</label>
+          <input id="name" name="name" placeholder="z. B. Anna" required>
+          <label for="profile_image">Profilbild</label>
+          <input id="profile_image" name="profile_image" type="file" accept="image/*">
+          <button type="submit">Anmelden</button>
+        </form>
+      {% endif %}
+    </div>
+
+    <div class="grid">
+      <div class="card">
+        <h2>Leaderboard</h2>
+        <ul class="leaderboard">
+          {% for entry in leaderboard %}
+            <li>
+              <div class="user-pill">
+                {% if entry.profile_image %}
+                  <img class="avatar" src="{{ url_for('uploaded_file', filename=entry.profile_image) }}" alt="{{ entry.name }}">
+                {% endif %}
+                <span>{{ loop.index }}. {{ entry.name }}</span>
+              </div>
+              <strong>{{ entry.total_distance_km }} km</strong>
+            </li>
+          {% else %}
+            <li class="muted">Noch keine Runden gespeichert.</li>
+          {% endfor %}
+        </ul>
+      </div>
+
+      <div class="card">
+        <h2>Deine letzten Rides</h2>
+        {% if rides %}
+          {% for ride in rides %}
+            <div class="ride-item">
+              <span>{{ ride.filename }}</span>
+              <strong>{{ ride.distance_km }} km</strong>
+            </div>
+          {% endfor %}
+        {% else %}
+          <p class="muted">Lade deine erste GPX-Datei hoch, um loszulegen.</p>
+        {% endif %}
+      </div>
+    </div>
   </div>
 </body>
 </html>
