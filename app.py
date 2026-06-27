@@ -195,7 +195,7 @@ def parse_gpx_metrics(path):
 def index():
     user = get_current_user()
     conn = get_db()
-    users = conn.execute("SELECT id, name FROM users ORDER BY name ASC").fetchall()
+    users = conn.execute("SELECT id, name, profile_image FROM users ORDER BY name ASC").fetchall()
     distance_leaderboard = conn.execute(
         "SELECT id, name, profile_image, total_distance_km FROM users ORDER BY total_distance_km DESC, name ASC"
     ).fetchall()
@@ -265,21 +265,27 @@ def login():
     if not name:
         return redirect(url_for("index"))
 
+    conn = get_db()
+    existing = conn.execute("SELECT id, profile_image FROM users WHERE name = ?", (name,)).fetchone()
+
     profile_image = request.files.get("profile_image")
     filename = None
     if profile_image and profile_image.filename:
-        if allowed_image(profile_image.filename):
-            filename = secure_filename(profile_image.filename)
-            filename = f"{uuid.uuid4().hex}_{filename}"
-            profile_image.save(os.path.join(app.config["UPLOAD_FOLDER"], filename))
+        if not allowed_image(profile_image.filename):
+            return redirect(url_for("index"))
+        filename = secure_filename(profile_image.filename)
+        filename = f"{uuid.uuid4().hex}_{filename}"
+        profile_image.save(os.path.join(app.config["UPLOAD_FOLDER"], filename))
 
-    conn = get_db()
-    existing = conn.execute("SELECT id, profile_image FROM users WHERE name = ?", (name,)).fetchone()
     if existing:
+        if not existing["profile_image"] and not filename:
+            return redirect(url_for("index"))
         if filename and (existing["profile_image"] != filename):
             conn.execute("UPDATE users SET profile_image = ? WHERE id = ?", (filename, existing["id"]))
         user_id = existing["id"]
     else:
+        if not filename:
+            return redirect(url_for("index"))
         cur = conn.execute(
             "INSERT INTO users (name, profile_image, total_distance_km) VALUES (?, ?, 0)",
             (name, filename),

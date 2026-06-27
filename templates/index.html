@@ -95,7 +95,7 @@
       <div class="login-card">
         <h1>Tour mit Freunden</h1>
         <p>Bitte zuerst anmelden, dann oeffnet sich dein Dashboard mit Upload, Trikotwertung und Etappensiegern.</p>
-          <form id="login-form" action="{{ url_for('login') }}" method="post" enctype="multipart/form-data">
+        <form id="login-form" action="{{ url_for('login') }}" method="post" enctype="multipart/form-data">
           <label for="name">Name</label>
           <input id="name" name="name" placeholder="z. B. Lotti" required>
           {% if users %}
@@ -103,39 +103,17 @@
             <select id="existing_user" name="existing_user">
               <option value="">- auswaehlen -</option>
               {% for user_option in users %}
-                <option value="{{ user_option.name }}">{{ user_option.name }}</option>
+                <option value="{{ user_option.name }}" data-has-image="{{ '1' if user_option.profile_image else '0' }}">{{ user_option.name }}</option>
               {% endfor %}
             </select>
           {% endif %}
-          <label for="profile_image">Profilbild</label>
-          <input id="profile_image" name="profile_image" type="file" accept="image/*">
-            <button id="login-submit" class="primary" type="submit">Anmelden und starten</button>
+          <label for="profile_image">Profilbild (verpflichtend fuer neue Profile)</label>
+          <input id="profile_image" name="profile_image" type="file" accept="image/*" required>
+          <button id="login-submit" class="primary" type="submit">Anmelden und starten</button>
         </form>
       </div>
     </div>
   {% else %}
-            <script>
-              const existingUserSelect = document.getElementById('existing_user');
-              const nameInput = document.getElementById('name');
-              const loginSubmit = document.getElementById('login-submit');
-
-              if (existingUserSelect && nameInput && loginSubmit) {
-                const defaultLabel = 'Anmelden und starten';
-
-                const syncLoginLabel = () => {
-                  const selectedName = existingUserSelect.value.trim();
-                  if (selectedName) {
-                    nameInput.value = selectedName;
-                    loginSubmit.textContent = `Weiter als ${selectedName}`;
-                  } else {
-                    loginSubmit.textContent = defaultLabel;
-                  }
-                };
-
-                existingUserSelect.addEventListener('change', syncLoginLabel);
-                syncLoginLabel();
-              }
-            </script>
   <div class="page">
     <div class="card topbar">
       <div class="logo-block">
@@ -160,7 +138,7 @@
         <div class="top-three-cards">
           <article class="trikot-card trikot-yellow">
             <h3>Gelbes Trikot</h3>
-            <p>Fuehrung nach Gesamt-Kilometern.</p>
+            <p>Führung nach Gesamt-Kilometern.</p>
             <ol class="top-three">
               {% for entry in distance_leaderboard[:3] %}
                 <li>
@@ -168,14 +146,14 @@
                   <strong>{{ entry.total_distance_km|round(1) }} km</strong>
                 </li>
               {% else %}
-                <li><span class="muted">Noch keine Eintraege.</span></li>
+                <li><span class="muted">Noch keine Einträge.</span></li>
               {% endfor %}
             </ol>
           </article>
 
           <article class="trikot-card trikot-polka">
             <h3>Bergtrikot</h3>
-            <p>Die meisten Hoehenmeter mit roten Punkten.</p>
+            <p>Die meisten Höhenmeter mit roten Punkten.</p>
             <ol class="top-three">
               {% for entry in elevation_leaderboard[:3] %}
                 <li>
@@ -183,13 +161,13 @@
                   <strong>{{ entry.total_elevation_m|round(1) }} m</strong>
                 </li>
               {% else %}
-                <li><span class="muted">Noch keine Eintraege.</span></li>
+                <li><span class="muted">Noch keine Einträge.</span></li>
               {% endfor %}
             </ol>
           </article>
 
           <article class="trikot-card trikot-green">
-            <h3>Gruenes Trikot</h3>
+            <h3>Grünes Trikot</h3>
             <p>Die meisten aktiven Fahrminuten.</p>
             <ol class="top-three">
               {% for entry in duration_leaderboard[:3] %}
@@ -198,7 +176,7 @@
                   <strong>{{ entry.total_duration_min|round(1) }} min</strong>
                 </li>
               {% else %}
-                <li><span class="muted">Noch keine Eintraege.</span></li>
+                <li><span class="muted">Noch keine Einträge.</span></li>
               {% endfor %}
             </ol>
           </article>
@@ -213,7 +191,7 @@
                 {% for entry in distance_leaderboard[3:] %}
                   <li><span>{{ loop.index + 3 }}. {{ entry.name }}</span><strong>{{ entry.total_distance_km|round(1) }} km</strong></li>
                 {% else %}
-                  <li><span class="muted">Keine weiteren Eintraege.</span></li>
+                  <li><span class="muted">Keine weiteren Einträge.</span></li>
                 {% endfor %}
               </ul>
             </section>
@@ -223,17 +201,17 @@
                 {% for entry in elevation_leaderboard[3:] %}
                   <li><span>{{ loop.index + 3 }}. {{ entry.name }}</span><strong>{{ entry.total_elevation_m|round(1) }} m</strong></li>
                 {% else %}
-                  <li><span class="muted">Keine weiteren Eintraege.</span></li>
+                  <li><span class="muted">Keine weiteren Einträge.</span></li>
                 {% endfor %}
               </ul>
             </section>
             <section class="expand-col">
-              <h4>Gruenes Trikot</h4>
+              <h4>Grünes Trikot</h4>
               <ul>
                 {% for entry in duration_leaderboard[3:] %}
                   <li><span>{{ loop.index + 3 }}. {{ entry.name }}</span><strong>{{ entry.total_duration_min|round(1) }} min</strong></li>
                 {% else %}
-                  <li><span class="muted">Keine weiteren Eintraege.</span></li>
+                  <li><span class="muted">Keine weiteren Einträge.</span></li>
                 {% endfor %}
               </ul>
             </section>
@@ -302,7 +280,7 @@
             <div class="metric-value">{{ stats.distance|round(1) }} km</div>
           </div>
           <div class="metric-card">
-            <div class="metric-title">Hoehenmeter</div>
+            <div class="metric-title">Höhenmeter</div>
             <div class="metric-value">{{ stats.elevation|round(1) }} m</div>
           </div>
           <div class="metric-card">
@@ -327,7 +305,7 @@
                 <span>{{ ride.distance_km }} km · {{ ride.elevation_m }} m · {{ ride.duration_min }} min</span>
               </div>
               <form class="delete-form" action="{{ url_for('delete_ride', ride_id=ride.id) }}" method="post">
-                <button class="danger" type="submit">Aktivitaet loeschen</button>
+                <button class="danger" type="submit">Aktivität löschen</button>
               </form>
             </li>
           {% endfor %}
@@ -338,6 +316,36 @@
     </div>
   </div>
   {% endif %}
+  <script>
+    const existingUserSelect = document.getElementById('existing_user');
+    const nameInput = document.getElementById('name');
+    const profileImageInput = document.getElementById('profile_image');
+    const loginSubmit = document.getElementById('login-submit');
+
+    if (existingUserSelect && nameInput && profileImageInput && loginSubmit) {
+      const defaultLabel = 'Anmelden und starten';
+
+      const syncLoginLabel = () => {
+        const selectedName = existingUserSelect.value.trim();
+        const selectedOption = existingUserSelect.options[existingUserSelect.selectedIndex];
+        const hasImage = selectedOption ? selectedOption.dataset.hasImage === '1' : false;
+
+        if (selectedName) {
+          nameInput.value = selectedName;
+          nameInput.required = false;
+          loginSubmit.textContent = `Weiter als ${selectedName}`;
+          profileImageInput.required = !hasImage;
+        } else {
+          nameInput.required = true;
+          loginSubmit.textContent = defaultLabel;
+          profileImageInput.required = true;
+        }
+      };
+
+      existingUserSelect.addEventListener('change', syncLoginLabel);
+      syncLoginLabel();
+    }
+  </script>
 </body>
 </html>
 
