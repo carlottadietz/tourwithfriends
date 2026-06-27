@@ -31,7 +31,7 @@ class TourWithFriendsTests(unittest.TestCase):
     def test_home_page_renders(self):
         response = self.client.get("/")
         self.assertEqual(response.status_code, 200)
-        self.assertIn(b"Tour mit Freunden", response.data)
+        self.assertIn(b"tour with friends", response.data)
 
     def test_login_creates_user_and_shows_leaderboard(self):
         profile_image = (BytesIO(b"fake-image-data"), "avatar.png")

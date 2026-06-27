@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Tour mit Freunden</title>
+  <title>tour with friends</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;700;800&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -54,10 +54,12 @@
     .winner-cutout {
       position: absolute;
       inset: 8px 8px 8px 8px;
-      background-image: url("{{ url_for('uploaded_file', filename='etappensieger_cutout.png') }}");
-      background-position: center bottom;
+      background-image:
+        url("{{ url_for('uploaded_file', filename='etappensieger_cutout.png') }}"),
+        url("https://upload.wikimedia.org/wikipedia/commons/5/5b/Tadej_Poga%C4%8Dar_%282020-09-20%29_-_Yellow_jersey_-_Tour_de_France_2020.jpg");
+      background-position: center bottom, center bottom;
       background-repeat: no-repeat;
-      background-size: contain;
+      background-size: contain, contain;
     }
     .winner-head {
       position: absolute;
