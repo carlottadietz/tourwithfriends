@@ -54,12 +54,10 @@
     .winner-cutout {
       position: absolute;
       inset: 8px 8px 8px 8px;
-      background-image:
-        url("{{ url_for('uploaded_file', filename='etappensieger_cutout.png') }}"),
-        url("https://upload.wikimedia.org/wikipedia/commons/5/5b/Tadej_Poga%C4%8Dar_%282020-09-20%29_-_Yellow_jersey_-_Tour_de_France_2020.jpg");
-      background-position: center bottom, center bottom;
+      background-image: url("{{ url_for('static', filename='etappensieger_cutout.png') }}");
+      background-position: center bottom;
       background-repeat: no-repeat;
-      background-size: contain, contain;
+      background-size: contain;
     }
     .winner-head {
       position: absolute;
