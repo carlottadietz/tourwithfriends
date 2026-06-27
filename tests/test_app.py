@@ -37,7 +37,7 @@ class TourWithFriendsTests(unittest.TestCase):
         profile_image = (BytesIO(b"fake-image-data"), "avatar.png")
         response = self.client.post(
             "/login",
-            data={"name": "Anna", "profile_image": profile_image},
+            data={"name": "Anna", "gender": "Femme", "profile_image": profile_image},
             content_type="multipart/form-data",
             follow_redirects=True,
         )
@@ -49,7 +49,7 @@ class TourWithFriendsTests(unittest.TestCase):
     def test_existing_user_can_log_in_again(self):
         self.client.post(
             "/login",
-            data={"name": "Anna", "profile_image": (BytesIO(b"fake-image-data"), "avatar.png")},
+            data={"name": "Anna", "gender": "Femme", "profile_image": (BytesIO(b"fake-image-data"), "avatar.png")},
             content_type="multipart/form-data",
             follow_redirects=True,
         )
@@ -124,7 +124,7 @@ class TourWithFriendsTests(unittest.TestCase):
     def test_user_can_delete_own_ride(self):
         self.client.post(
             "/login",
-            data={"name": "Anna", "profile_image": (BytesIO(b"fake-image-data"), "avatar.png")},
+            data={"name": "Anna", "gender": "Femme", "profile_image": (BytesIO(b"fake-image-data"), "avatar.png")},
             content_type="multipart/form-data",
             follow_redirects=True,
         )

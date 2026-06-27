@@ -27,6 +27,7 @@ def init_db():
         CREATE TABLE IF NOT EXISTS users (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             name TEXT UNIQUE NOT NULL,
+            gender TEXT NOT NULL DEFAULT 'Homme',
             profile_image TEXT,
             total_distance_km REAL DEFAULT 0,
             total_elevation_m REAL DEFAULT 0,
@@ -48,6 +49,10 @@ def init_db():
         )
         """
     )
+    columns = conn.execute("PRAGMA table_info(users)").fetchall()
+    column_names = {col[1] for col in columns}
+    if "gender" not in column_names:
+        conn.execute("ALTER TABLE users ADD COLUMN gender TEXT NOT NULL DEFAULT 'Homme'")
     conn.commit()
     conn.close()
 
@@ -99,6 +104,7 @@ def haversine(lat1, lon1, lat2, lon2):
 PAUSE_THRESHOLD_SECONDS = 1800
 ELEVATION_HYSTERESIS_M = 4.5
 EVENT_START_MONTH_DAY = (7, 4)
+VALID_GENDERS = ("Femme", "Homme")
 
 
 def calculate_ascent_hysteresis(elevations, threshold_m=ELEVATION_HYSTERESIS_M):
@@ -126,6 +132,17 @@ def is_allowed_event_date(created_at_iso):
     except ValueError:
         return False
     return (activity_date.month, activity_date.day) >= EVENT_START_MONTH_DAY
+
+
+def normalize_gender(raw_gender):
+    if not raw_gender:
+        return None
+    lowered = raw_gender.strip().lower()
+    if lowered == "femme":
+        return "Femme"
+    if lowered == "homme":
+        return "Homme"
+    return None
 
 def parse_gpx_metrics(path):
     tree = ET.parse(path)
@@ -205,12 +222,20 @@ def parse_gpx_metrics(path):
 def index():
     user = get_current_user()
     conn = get_db()
-    users = conn.execute("SELECT id, name, profile_image FROM users ORDER BY name ASC").fetchall()
+    users = conn.execute("SELECT id, name, gender, profile_image FROM users ORDER BY name ASC").fetchall()
+
+    selected_gender = normalize_gender(request.args.get("gender", ""))
+    if selected_gender is None and user:
+        selected_gender = normalize_gender(user["gender"])
+    if selected_gender is None:
+        selected_gender = "Homme"
+
     yellow_leaderboard = conn.execute(
         """
         SELECT
             id,
             name,
+            gender,
             profile_image,
             total_distance_km,
             total_duration_min,
@@ -219,24 +244,29 @@ def index():
                 ELSE 0
             END AS avg_speed_kmh
         FROM users
+        WHERE gender = ?
         ORDER BY avg_speed_kmh DESC, total_distance_km DESC, name ASC
         """
-    ).fetchall()
+    , (selected_gender,)).fetchall()
     white_leaderboard = conn.execute(
-        "SELECT id, name, profile_image, total_distance_km FROM users ORDER BY total_distance_km DESC, name ASC"
+        "SELECT id, name, gender, profile_image, total_distance_km FROM users WHERE gender = ? ORDER BY total_distance_km DESC, name ASC",
+        (selected_gender,),
     ).fetchall()
     elevation_leaderboard = conn.execute(
-        "SELECT id, name, profile_image, total_elevation_m FROM users ORDER BY total_elevation_m DESC, name ASC"
+        "SELECT id, name, gender, profile_image, total_elevation_m FROM users WHERE gender = ? ORDER BY total_elevation_m DESC, name ASC",
+        (selected_gender,),
     ).fetchall()
     duration_leaderboard = conn.execute(
-        "SELECT id, name, profile_image, total_duration_min FROM users ORDER BY total_duration_min DESC, name ASC"
+        "SELECT id, name, gender, profile_image, total_duration_min FROM users WHERE gender = ? ORDER BY total_duration_min DESC, name ASC",
+        (selected_gender,),
     ).fetchall()
-    daily_winners = conn.execute(
+    daily_winners_all = conn.execute(
         """
         WITH daily_totals AS (
             SELECT
                 date(r.created_at) AS ride_day,
                 r.user_id,
+                u.gender,
                 ROUND(SUM(r.distance_km), 2) AS distance_km,
                 ROUND(SUM(r.duration_min), 2) AS duration_min,
                 CASE
@@ -244,11 +274,13 @@ def index():
                     ELSE 0
                 END AS avg_speed_kmh
             FROM rides r
-            GROUP BY date(r.created_at), r.user_id
+            JOIN users u ON r.user_id = u.id
+            GROUP BY date(r.created_at), r.user_id, u.gender
         )
         SELECT
             strftime('%d.%m.%Y', dt.ride_day) AS day,
             dt.user_id,
+            dt.gender,
             dt.distance_km,
             dt.duration_min,
             dt.avg_speed_kmh,
@@ -260,6 +292,7 @@ def index():
             SELECT 1
             FROM daily_totals better
             WHERE better.ride_day = dt.ride_day
+                            AND better.gender = dt.gender
               AND (
                   better.avg_speed_kmh > dt.avg_speed_kmh
                   OR (
@@ -273,9 +306,13 @@ def index():
                   )
               )
         )
-        ORDER BY dt.ride_day DESC
+        ORDER BY dt.ride_day DESC, dt.gender ASC
         """
     ).fetchall()
+    daily_winners = [row for row in daily_winners_all if row["gender"] == selected_gender]
+
+    daily_winner_homme = next((row for row in daily_winners_all if row["gender"] == "Homme"), None)
+    daily_winner_femme = next((row for row in daily_winners_all if row["gender"] == "Femme"), None)
     rides = []
     if user:
         rides = conn.execute(
@@ -303,6 +340,8 @@ def index():
         "index.html",
         user=user,
         users=users,
+        selected_gender=selected_gender,
+        genders=VALID_GENDERS,
         current_leader=current_leader,
         stats=stats,
         yellow_leaderboard=yellow_leaderboard,
@@ -310,6 +349,8 @@ def index():
         elevation_leaderboard=elevation_leaderboard,
         duration_leaderboard=duration_leaderboard,
         daily_winners=daily_winners,
+        daily_winner_homme=daily_winner_homme,
+        daily_winner_femme=daily_winner_femme,
         rides=rides,
     )
 
@@ -317,6 +358,7 @@ def index():
 @app.route("/login", methods=["POST"])
 def login():
     selected_name = request.form.get("existing_user", "").strip()
+    selected_gender = normalize_gender(request.form.get("gender", ""))
     name = request.form.get("name", "").strip()
     if selected_name:
         name = selected_name
@@ -324,7 +366,7 @@ def login():
         return redirect(url_for("index"))
 
     conn = get_db()
-    existing = conn.execute("SELECT id, profile_image FROM users WHERE name = ?", (name,)).fetchone()
+    existing = conn.execute("SELECT id, gender, profile_image FROM users WHERE name = ?", (name,)).fetchone()
 
     profile_image = request.files.get("profile_image")
     filename = None
@@ -340,20 +382,27 @@ def login():
             return redirect(url_for("index"))
         if filename and (existing["profile_image"] != filename):
             conn.execute("UPDATE users SET profile_image = ? WHERE id = ?", (filename, existing["id"]))
+        if not existing["gender"] and selected_gender:
+            conn.execute("UPDATE users SET gender = ? WHERE id = ?", (selected_gender, existing["id"]))
         user_id = existing["id"]
+        user_gender = existing["gender"] or selected_gender or "Homme"
     else:
         if not filename:
             return redirect(url_for("index"))
+        if selected_gender is None:
+            return redirect(url_for("index"))
         cur = conn.execute(
-            "INSERT INTO users (name, profile_image, total_distance_km) VALUES (?, ?, 0)",
-            (name, filename),
+            "INSERT INTO users (name, gender, profile_image, total_distance_km) VALUES (?, ?, ?, 0)",
+            (name, selected_gender, filename),
         )
         user_id = cur.lastrowid
+        user_gender = selected_gender
 
     conn.commit()
     session.permanent = True
     session["user_id"] = user_id
     session["user_name"] = name
+    session["user_gender"] = user_gender
     return redirect(url_for("index"))
 
 
