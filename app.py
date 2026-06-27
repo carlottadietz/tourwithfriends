@@ -165,7 +165,12 @@ def index():
         "SELECT id, name, profile_image, total_duration_min FROM users ORDER BY total_duration_min DESC, name ASC"
     ).fetchall()
     daily_winners = conn.execute(
-        "SELECT DATE(created_at) as day, user_id, filename, distance_km FROM rides ORDER BY day DESC, distance_km DESC"
+        """
+        SELECT r.created_at as day, r.user_id, r.distance_km, u.name as user_name
+        FROM rides r
+        JOIN users u ON r.user_id = u.id
+        ORDER BY date(r.created_at) DESC, r.distance_km DESC
+        """
     ).fetchall()
     rides = []
     if user:
@@ -174,10 +179,22 @@ def index():
             (user["id"],),
         ).fetchall()
 
+    current_leader = None
+    if distance_leaderboard:
+        current_leader = distance_leaderboard[0]
+
+    stats = {
+        "distance": sum(entry["total_distance_km"] for entry in distance_leaderboard),
+        "elevation": sum(entry["total_elevation_m"] for entry in elevation_leaderboard),
+        "duration": sum(entry["total_duration_min"] for entry in duration_leaderboard),
+    }
+
     return render_template(
         "index.html",
         user=user,
         users=users,
+        current_leader=current_leader,
+        stats=stats,
         distance_leaderboard=distance_leaderboard,
         elevation_leaderboard=elevation_leaderboard,
         duration_leaderboard=duration_leaderboard,

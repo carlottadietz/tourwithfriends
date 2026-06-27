@@ -27,56 +27,103 @@
     .polka { background: linear-gradient(135deg, #fdba74, #f59e0b); }
     .highlight { background: rgba(250,204,21,0.12); border: 1px solid rgba(250,204,21,0.28); border-radius: 16px; padding: 12px 14px; margin-bottom: 12px; }
     .stage-badge { display: inline-flex; align-items: center; justify-content: center; min-width: 34px; height: 34px; border-radius: 999px; background: #facc15; color: #0f172a; font-weight: 800; margin-right: 8px; }
-    .countdown { background: linear-gradient(135deg, rgba(250,204,21,0.15), rgba(249,115,22,0.18)); border: 1px solid rgba(250,204,21,0.3); border-radius: 18px; padding: 16px 18px; margin-bottom: 16px; }
+    .countdown { background: linear-gradient(135deg, rgba(250,204,21,0.18), rgba(249,115,22,0.16)); border: 1px solid rgba(250,204,21,0.3); border-radius: 18px; padding: 16px 18px; margin-bottom: 16px; }
     .countdown strong { font-size: 1.1rem; }
+    .hero { display: grid; grid-template-columns: 2fr 1fr; gap: 18px; align-items: start; }
+    .hero-card { background: linear-gradient(135deg, rgba(255,255,255,0.12), rgba(255,255,255,0.06)); border: 1px solid rgba(255,255,255,0.16); border-radius: 20px; padding: 18px; }
+    .stats-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+    .stat-box { background: rgba(255,255,255,0.08); border-radius: 16px; padding: 12px; }
+    .stat-box strong { display: block; font-size: 1.05rem; margin-top: 4px; }
+    .upload-hint { color: #fef3c7; background: rgba(250,204,21,0.12); border: 1px solid rgba(250,204,21,0.2); border-radius: 14px; padding: 10px 12px; font-size: 0.95rem; }
+    .top-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px; }
   </style>
 </head>
 <body>
   <div class="container">
     <div class="card">
-      <h1>Tour de France mit Freunden</h1>
-      <p>Tracke deine Rides, sammle Kilometer, Höhenmeter und Fahrzeit und kämpfe um die drei Trikots der Tour von 04.07.2026 bis 26.07.2026.</p>
-      <div class="countdown">
-        <strong>Tour-Start in:</strong>
-        <div id="countdown" class="muted">Lade Countdown…</div>
+      <div class="hero">
+        <div>
+          <h1>Tour de France mit Freunden</h1>
+          <p>Tracke deine Rides, sammle Kilometer, Höhenmeter und Fahrzeit und kämpfe um die drei Trikots der Tour von 04.07.2026 bis 26.07.2026.</p>
+          <div class="countdown">
+            <strong>Tour-Start in:</strong>
+            <div id="countdown" class="muted">Lade Countdown…</div>
+          </div>
+        </div>
+        <div class="hero-card">
+          <h3>Aktueller Trikot-Führer</h3>
+          {% if current_leader %}
+            <div class="user-pill" style="margin-top: 8px;">
+              {% if current_leader.profile_image %}
+                <img class="avatar" src="{{ url_for('uploaded_file', filename=current_leader.profile_image) }}" alt="{{ current_leader.name }}">
+              {% endif %}
+              <span><strong>{{ current_leader.name }}</strong> · {{ current_leader.total_distance_km|round(1) }} km</span>
+            </div>
+          {% else %}
+            <p class="muted">Noch keine Daten vorhanden.</p>
+          {% endif %}
+        </div>
+      </div>
+
+      <div class="hero-card" style="margin-top: 16px;">
+        <h3>Gesamtübersicht</h3>
+        <div class="stats-grid" style="margin-top: 10px;">
+          <div class="stat-box">
+            <span class="muted">Gesamtkm</span>
+            <strong>{{ stats.distance|round(1) }} km</strong>
+          </div>
+          <div class="stat-box">
+            <span class="muted">Höhenmeter</span>
+            <strong>{{ stats.elevation|round(1) }} m</strong>
+          </div>
+          <div class="stat-box">
+            <span class="muted">Fahrzeit</span>
+            <strong>{{ stats.duration|round(1) }} min</strong>
+          </div>
+        </div>
       </div>
 
       {% if user %}
-        <div class="user-pill">
-          {% if user.profile_image %}
-            <img class="avatar" src="{{ url_for('uploaded_file', filename=user.profile_image) }}" alt="Profilbild von {{ user.name }}">
-          {% endif %}
-          <strong>Hallo, {{ user.name }}</strong>
+        <div class="hero-card" style="margin-top: 16px;">
+          <div class="user-pill">
+            {% if user.profile_image %}
+              <img class="avatar" src="{{ url_for('uploaded_file', filename=user.profile_image) }}" alt="Profilbild von {{ user.name }}">
+            {% endif %}
+            <strong>Hallo, {{ user.name }}</strong>
+          </div>
+          <form action="{{ url_for('upload') }}" method="post" enctype="multipart/form-data" style="margin-top: 16px;">
+            <label for="gpx_file">GPX-Datei hochladen</label>
+            <input id="gpx_file" name="gpx_file" type="file" accept=".gpx" required>
+            <div class="upload-hint" style="margin-top: 8px;">Deine bisherigen Daten bleiben gespeichert. Wenn du erneut uploadest, wird dein Konto weitergeführt und das Leaderboard aktualisiert.</div>
+            <button type="submit" style="margin-top: 10px;">Runde speichern</button>
+          </form>
+          <form action="{{ url_for('logout') }}" method="post" style="margin-top: 12px;">
+            <button type="submit">Abmelden</button>
+          </form>
         </div>
-        <form action="{{ url_for('upload') }}" method="post" enctype="multipart/form-data" style="margin-top: 16px;">
-          <label for="gpx_file">GPX-Datei hochladen</label>
-          <input id="gpx_file" name="gpx_file" type="file" accept=".gpx" required>
-          <button type="submit">Runde speichern</button>
-        </form>
-        <form action="{{ url_for('logout') }}" method="post" style="margin-top: 12px;">
-          <button type="submit">Abmelden</button>
-        </form>
       {% else %}
-        <form action="{{ url_for('login') }}" method="post" enctype="multipart/form-data">
-          <label for="name">Neuer Teilnehmer oder bestehender Name</label>
-          <input id="name" name="name" placeholder="z. B. Anna" required>
-          {% if users %}
-            <label for="existing_user">Oder einen bestehenden Namen auswählen</label>
-            <select id="existing_user" name="existing_user">
-              <option value="">– keinen auswählen –</option>
-              {% for user_option in users %}
-                <option value="{{ user_option.name }}">{{ user_option.name }}</option>
-              {% endfor %}
-            </select>
-          {% endif %}
-          <label for="profile_image">Profilbild</label>
-          <input id="profile_image" name="profile_image" type="file" accept="image/*">
-          <button type="submit">Anmelden</button>
-        </form>
+        <div class="hero-card" style="margin-top: 16px;">
+          <form action="{{ url_for('login') }}" method="post" enctype="multipart/form-data">
+            <label for="name">Neuer Teilnehmer oder bestehender Name</label>
+            <input id="name" name="name" placeholder="z. B. Anna" required>
+            {% if users %}
+              <label for="existing_user">Oder einen bestehenden Namen auswählen</label>
+              <select id="existing_user" name="existing_user">
+                <option value="">– keinen auswählen –</option>
+                {% for user_option in users %}
+                  <option value="{{ user_option.name }}">{{ user_option.name }}</option>
+                {% endfor %}
+              </select>
+            {% endif %}
+            <label for="profile_image">Profilbild</label>
+            <input id="profile_image" name="profile_image" type="file" accept="image/*">
+            <button type="submit">Anmelden</button>
+          </form>
+        </div>
       {% endif %}
     </div>
 
-    <div class="grid">
+    <div class="top-grid">
       <div class="card">
         <h2>🏁 Leaderboard der Trikots</h2>
         <div class="jersey yellow">Gelbes Trikot</div>
@@ -136,7 +183,7 @@
         {% if daily_winners %}
           {% for stage in daily_winners %}
             <div class="highlight stage-item">
-              <span><span class="stage-badge">{{ loop.index }}</span>{{ stage.day }} · {{ stage.filename }}</span>
+              <span><span class="stage-badge">{{ loop.index }}</span>{{ stage.day }} · {{ stage.user_name }}</span>
               <strong>{{ stage.distance_km }} km</strong>
             </div>
           {% endfor %}
