@@ -107,8 +107,28 @@
 
     .form-card { background: #ffffff; border: 1px solid rgba(148,163,184,0.18); border-radius: 24px; padding: 24px; }
     form { display: grid; gap: 14px; }
-    input:not([type="radio"]), select { width: 100%; border-radius: 14px; border: 1px solid rgba(148,163,184,0.35); background: #f8fafc; color: #1f2937; padding: 14px 16px; }
-    input:not([type="radio"])::placeholder, select { color: #64748b; }
+    input:not([type="radio"]):not([type="file"]), select { width: 100%; border-radius: 14px; border: 1px solid rgba(148,163,184,0.35); background: #f8fafc; color: #1f2937; padding: 14px 16px; }
+    input:not([type="radio"]):not([type="file"])::placeholder, select { color: #64748b; }
+    input[type="file"] {
+      width: 100%;
+      border-radius: 14px;
+      border: 1px solid rgba(148,163,184,0.35);
+      background: #f8fafc;
+      color: #1f2937;
+      padding: 8px;
+      appearance: auto;
+      -webkit-appearance: auto;
+      cursor: pointer;
+    }
+    input[type="file"]::file-selector-button {
+      border: 1px solid rgba(148,163,184,0.45);
+      border-radius: 10px;
+      padding: 8px 12px;
+      margin-right: 10px;
+      background: #ffffff;
+      color: #1f2937;
+      cursor: pointer;
+    }
     button { border-radius: 12px; border: none; padding: 11px 14px; font-weight: 700; cursor: pointer; transition: transform 120ms ease, background 120ms ease; }
     button:hover { transform: translateY(-1px); }
     .primary { background: #facc15; color: #0f172a; }
