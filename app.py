@@ -442,6 +442,23 @@ def update_profile_image():
     return redirect(url_for("index"))
 
 
+@app.route("/profile-gender", methods=["POST"])
+def update_profile_gender():
+    user = get_current_user()
+    if not user:
+        return redirect(url_for("index"))
+
+    gender = normalize_gender(request.form.get("gender", ""))
+    if gender is None:
+        return redirect(url_for("index"))
+
+    conn = get_db()
+    conn.execute("UPDATE users SET gender = ? WHERE id = ?", (gender, user["id"]))
+    conn.commit()
+    session["user_gender"] = gender
+    return redirect(url_for("index", gender=gender))
+
+
 @app.route("/upload", methods=["POST"])
 def upload():
     if not get_current_user():

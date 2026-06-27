@@ -94,8 +94,10 @@
     .gender-link { text-decoration: none; color: #334155; padding: 8px 12px; border-radius: 999px; font-weight: 800; font-size: 0.88rem; }
     .gender-link.active { background: #facc15; color: #0f172a; }
     .gender-fieldset { border: 1px solid rgba(148,163,184,0.3); border-radius: 14px; padding: 10px 12px; background: #f8fafc; }
-    .gender-options { display: flex; gap: 16px; }
-    .gender-options label { display: inline-flex; gap: 6px; align-items: center; color: #334155; }
+    .gender-fieldset legend { padding: 0 6px; color: #334155; font-weight: 700; }
+    .gender-options { display: flex; gap: 20px; align-items: center; }
+    .gender-options label { display: inline-flex; gap: 8px; align-items: center; color: #334155; font-weight: 600; }
+    .gender-options input[type="radio"] { width: auto; margin: 0; }
 
     .login-shell { max-width: 560px; margin: 8vh auto 0; }
     .login-card { background: rgba(255,255,255,0.98); border: 1px solid rgba(148,163,184,0.24); border-radius: 30px; padding: 28px; box-shadow: 0 24px 60px rgba(148,163,184,0.2); }
@@ -104,8 +106,8 @@
 
     .form-card { background: #ffffff; border: 1px solid rgba(148,163,184,0.18); border-radius: 24px; padding: 24px; }
     form { display: grid; gap: 14px; }
-    input, select { width: 100%; border-radius: 14px; border: 1px solid rgba(148,163,184,0.35); background: #f8fafc; color: #1f2937; padding: 14px 16px; }
-    input::placeholder, select { color: #64748b; }
+    input:not([type="radio"]), select { width: 100%; border-radius: 14px; border: 1px solid rgba(148,163,184,0.35); background: #f8fafc; color: #1f2937; padding: 14px 16px; }
+    input:not([type="radio"])::placeholder, select { color: #64748b; }
     button { border-radius: 12px; border: none; padding: 11px 14px; font-weight: 700; cursor: pointer; transition: transform 120ms ease, background 120ms ease; }
     button:hover { transform: translateY(-1px); }
     .primary { background: #facc15; color: #0f172a; }
@@ -405,8 +407,16 @@
           {% if user.profile_image %}
             <img class="avatar" src="{{ url_for('uploaded_file', filename=user.profile_image) }}" alt="Profilbild von {{ user.name }}">
           {% endif %}
-          <span><strong>{{ user.name }}</strong></span>
+          <span><strong>{{ user.name }}</strong> · {{ user.gender }}</span>
         </div>
+        <form class="profile-update-form" action="{{ url_for('update_profile_gender') }}" method="post">
+          <label for="profile_gender">Geschlecht ändern</label>
+          <select id="profile_gender" name="gender" required>
+            <option value="Femme" {{ 'selected' if user.gender == 'Femme' else '' }}>Femme</option>
+            <option value="Homme" {{ 'selected' if user.gender == 'Homme' else '' }}>Homme</option>
+          </select>
+          <button class="primary" type="submit">Geschlecht speichern</button>
+        </form>
         <form class="profile-update-form" action="{{ url_for('update_profile_image') }}" method="post" enctype="multipart/form-data">
           <label for="new_profile_image">Profilbild ändern</label>
           <input id="new_profile_image" name="profile_image" type="file" accept="image/*" required>
