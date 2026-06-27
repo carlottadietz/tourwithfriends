@@ -96,6 +96,26 @@ def haversine(lat1, lon1, lat2, lon2):
 
 
 PAUSE_THRESHOLD_SECONDS = 1800
+ELEVATION_HYSTERESIS_M = 4.5
+
+
+def calculate_ascent_hysteresis(elevations, threshold_m=ELEVATION_HYSTERESIS_M):
+    if not elevations:
+        return 0.0
+
+    accepted = [elevations[0]]
+    last = elevations[0]
+    for value in elevations[1:]:
+        if abs(value - last) >= threshold_m:
+            accepted.append(value)
+            last = value
+
+    total_ascent = 0.0
+    for previous, current in zip(accepted, accepted[1:]):
+        if current > previous:
+            total_ascent += current - previous
+
+    return total_ascent
 
 def parse_gpx_metrics(path):
     tree = ET.parse(path)
@@ -121,17 +141,16 @@ def parse_gpx_metrics(path):
         return {"distance_km": 0.0, "elevation_m": 0.0, "duration_min": 0.0, "created_at": None}
 
     total_distance = 0.0
-    total_elevation = 0.0
     total_active_seconds = 0.0
+    elevation_samples = []
     previous = None
     start_time = None
     for point in points:
+        if point["ele"] is not None:
+            elevation_samples.append(point["ele"])
+
         if previous is not None:
             total_distance += haversine(previous["lat"], previous["lon"], point["lat"], point["lon"])
-            if previous["ele"] is not None and point["ele"] is not None:
-                delta_elevation = point["ele"] - previous["ele"]
-                if delta_elevation > 0:
-                    total_elevation += delta_elevation
 
             if previous["time"] and point["time"]:
                 try:
@@ -162,6 +181,7 @@ def parse_gpx_metrics(path):
 
     duration_minutes = round(total_active_seconds / 60.0, 2)
     created_at = start_time.isoformat() if start_time else None
+    total_elevation = calculate_ascent_hysteresis(elevation_samples)
 
     return {
         "distance_km": round(total_distance, 2),

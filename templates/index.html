@@ -8,19 +8,28 @@
   <style>
     :root { color-scheme: light; }
     body { font-family: Inter, system-ui, sans-serif; min-height: 100vh; background: linear-gradient(180deg, #f8fafc 0%, #ffffff 45%, #e2e8f0 100%); color: #1f2937; margin: 0; padding: 24px; }
-    .page { max-width: 1140px; margin: 0 auto; display: grid; gap: 24px; }
-    .card { background: rgba(255,255,255,0.96); border: 1px solid rgba(148,163,184,0.24); border-radius: 30px; padding: 24px; box-shadow: 0 24px 60px rgba(148,163,184,0.16); }
+    .page { max-width: 1180px; margin: 0 auto; display: grid; gap: 24px; }
+    .card { background: rgba(255,255,255,0.97); border: 1px solid rgba(148,163,184,0.24); border-radius: 30px; padding: 24px; box-shadow: 0 24px 60px rgba(148,163,184,0.16); }
     .topbar { display: grid; grid-template-columns: 1fr auto; gap: 20px; align-items: start; }
     .logo-block { display: grid; gap: 12px; }
     .label-small { color: #ca8a04; font-size: 0.9rem; letter-spacing: 0.18em; text-transform: uppercase; }
-    h1 { margin: 0; font-size: clamp(2.5rem, 4vw, 4.2rem); letter-spacing: -0.04em; }
-    h2 { margin: 0 0 18px; font-size: 1.15rem; letter-spacing: -0.02em; }
+    h1 { margin: 0; font-size: clamp(2.3rem, 4vw, 4rem); letter-spacing: -0.04em; }
+    h2 { margin: 0; font-size: 1.2rem; letter-spacing: -0.02em; }
     p, label { color: #475569; line-height: 1.6; }
-    .headline-text { display: grid; gap: 10px; max-width: 690px; }
-    .bright-box { background: #fde68a; color: #0f172a; border-radius: 24px; padding: 18px 22px; box-shadow: 0 20px 40px rgba(250,204,21,0.24); }
+    .headline-text { display: grid; gap: 10px; max-width: 700px; }
+    .bright-box { background: #fde68a; color: #0f172a; border-radius: 24px; padding: 18px 22px; box-shadow: 0 20px 40px rgba(250,204,21,0.22); }
     .bright-box strong { display: block; font-size: 1rem; margin-bottom: 6px; }
     .layout-two { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px; }
     .layout-three { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
+    .section-title { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 16px; }
+    .badge { display: inline-flex; align-items: center; gap: 8px; padding: 8px 12px; border-radius: 18px; font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.12em; background: #f8fafc; border: 1px solid rgba(148,163,184,0.25); color: #334155; }
+    .hero-note { color: #475569; }
+
+    .login-shell { max-width: 560px; margin: 8vh auto 0; }
+    .login-card { background: rgba(255,255,255,0.98); border: 1px solid rgba(148,163,184,0.24); border-radius: 30px; padding: 28px; box-shadow: 0 24px 60px rgba(148,163,184,0.2); }
+    .login-card h1 { font-size: clamp(2rem, 5vw, 3rem); margin-bottom: 8px; }
+    .login-card p { margin: 0 0 16px; }
+
     .form-card { background: #ffffff; border: 1px solid rgba(148,163,184,0.18); border-radius: 24px; padding: 24px; }
     form { display: grid; gap: 14px; }
     input, select { width: 100%; border-radius: 14px; border: 1px solid rgba(148,163,184,0.35); background: #f8fafc; color: #1f2937; padding: 14px 16px; }
@@ -29,30 +38,28 @@
     button:hover { transform: translateY(-1px); }
     .primary { background: #facc15; color: #0f172a; }
     .danger { background: #ef4444; color: #ffffff; }
-    .metric-card { background: #f8fafc; border: 1px solid rgba(148,163,184,0.25); border-radius: 20px; padding: 20px; display: grid; gap: 10px; }
-    .metric-title { color: #64748b; font-size: 0.9rem; text-transform: uppercase; letter-spacing: 0.16em; }
-    .metric-value { font-size: 1.55rem; font-weight: 800; color: #0f172a; }
-    .card-hero { background: #ffffff; border: 1px solid rgba(148,163,184,0.18); border-radius: 24px; padding: 22px; }
-    .section-title { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 16px; }
-    .section-title h2 { margin: 0; font-size: 1.1rem; }
-    .badge { display: inline-flex; align-items: center; gap: 8px; padding: 8px 12px; border-radius: 18px; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.12em; background: #f8fafc; border: 1px solid rgba(148,163,184,0.25); color: #334155; }
-    .hero-note { color: #475569; }
     .upload-hint { color: #0f172a; background: #facc15; border-radius: 16px; padding: 14px 16px; font-size: 0.95rem; }
     .upload-hint span { font-weight: 700; }
     .user-pill { display: inline-flex; align-items: center; gap: 12px; background: #f8fafc; border: 1px solid rgba(148,163,184,0.24); border-radius: 999px; padding: 12px 16px; max-width: fit-content; }
     .avatar { width: 42px; height: 42px; border-radius: 999px; object-fit: cover; }
-    .stats-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; margin-top: 10px; }
-    .muted { color: #64748b; }
-    .mini-card { border-radius: 22px; background: #f8fafc; border: 1px solid rgba(148,163,184,0.28); padding: 18px; }
-    .mini-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 12px; }
-    .mini-list li { display: grid; gap: 6px; }
-    .mini-list strong { font-size: 1rem; }
-    .jersey-section { display: grid; gap: 16px; }
-    .jersey-panel { border: 1px solid rgba(148,163,184,0.25); border-radius: 22px; padding: 18px; background: #f8fafc; display: grid; gap: 10px; }
-    .jersey-name { margin: 0; font-size: 1.35rem; font-weight: 900; letter-spacing: -0.02em; }
-    .jersey-desc { margin: 0; font-size: 0.92rem; color: #475569; }
+
+    .trikot-full { width: 100%; }
+    .trikot-stage { display: grid; gap: 16px; }
+    .top-three-cards { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; }
+    .trikot-card { border-radius: 22px; padding: 18px; border: 1px solid rgba(15,23,42,0.12); display: grid; gap: 10px; position: relative; overflow: hidden; }
+    .trikot-card h3 { margin: 0; font-size: 1.35rem; font-weight: 900; }
+    .trikot-card p { margin: 0; font-size: 0.9rem; }
+    .trikot-yellow { background: linear-gradient(135deg, #fde047, #facc15); }
+    .trikot-green { background: linear-gradient(135deg, #bbf7d0, #4ade80); }
+    .trikot-polka {
+      background:
+        radial-gradient(circle, #dc2626 0 7px, transparent 8px) 0 0 / 36px 36px,
+        radial-gradient(circle, #dc2626 0 7px, transparent 8px) 18px 18px / 36px 36px,
+        #ffffff;
+    }
     .top-three { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
-    .top-three li { display: flex; align-items: center; justify-content: space-between; gap: 8px; font-size: 0.95rem; }
+    .top-three li { display: flex; justify-content: space-between; gap: 10px; font-size: 0.95rem; font-weight: 700; }
+    .top-three .rank { background: rgba(15,23,42,0.08); border-radius: 999px; padding: 3px 8px; font-size: 0.8rem; }
     .expand-box { border: 1px dashed rgba(148,163,184,0.45); border-radius: 16px; padding: 12px 14px; background: #ffffff; }
     .expand-box summary { cursor: pointer; font-weight: 700; color: #334155; }
     .expand-grid { margin-top: 12px; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
@@ -60,27 +67,59 @@
     .expand-col h4 { margin: 0 0 8px; font-size: 0.92rem; }
     .expand-col ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
     .expand-col li { display: flex; justify-content: space-between; gap: 8px; font-size: 0.9rem; }
+
+    .card-hero { background: #ffffff; border: 1px solid rgba(148,163,184,0.18); border-radius: 24px; padding: 22px; }
     .stage-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
     .stage-list li { background: #f8fafc; border: 1px solid rgba(148,163,184,0.2); border-radius: 14px; padding: 10px 12px; display: grid; gap: 4px; }
+    .stats-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
+    .metric-card { background: #f8fafc; border: 1px solid rgba(148,163,184,0.25); border-radius: 20px; padding: 20px; display: grid; gap: 10px; }
+    .metric-title { color: #64748b; font-size: 0.9rem; text-transform: uppercase; letter-spacing: 0.16em; }
+    .metric-value { font-size: 1.55rem; font-weight: 800; color: #0f172a; }
     .ride-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 12px; }
     .ride-item { background: #f8fafc; border: 1px solid rgba(148,163,184,0.2); border-radius: 16px; padding: 12px; display: flex; justify-content: space-between; gap: 12px; align-items: center; }
     .ride-meta { display: grid; gap: 4px; }
     .delete-form { margin: 0; }
     .delete-form button { padding: 8px 12px; font-size: 0.88rem; }
-    @media (max-width: 860px) {
-      .layout-two, .layout-three, .stats-grid, .expand-grid { grid-template-columns: 1fr; }
+    .muted { color: #64748b; }
+
+    @media (max-width: 960px) {
+      .layout-two, .top-three-cards, .stats-grid, .expand-grid, .layout-three { grid-template-columns: 1fr; }
       .topbar { grid-template-columns: 1fr; }
       .ride-item { align-items: flex-start; flex-direction: column; }
     }
   </style>
 </head>
 <body>
+  {% if not user %}
+    <div class="login-shell">
+      <div class="login-card">
+        <h1>Tour mit Freunden</h1>
+        <p>Bitte zuerst anmelden, dann oeffnet sich dein Dashboard mit Upload, Trikotwertung und Etappensiegern.</p>
+        <form action="{{ url_for('login') }}" method="post" enctype="multipart/form-data">
+          <label for="name">Name</label>
+          <input id="name" name="name" placeholder="z. B. Lotti" required>
+          {% if users %}
+            <label for="existing_user">Bestehenden Namen waehlen</label>
+            <select id="existing_user" name="existing_user">
+              <option value="">- auswaehlen -</option>
+              {% for user_option in users %}
+                <option value="{{ user_option.name }}">{{ user_option.name }}</option>
+              {% endfor %}
+            </select>
+          {% endif %}
+          <label for="profile_image">Profilbild</label>
+          <input id="profile_image" name="profile_image" type="file" accept="image/*">
+          <button class="primary" type="submit">Anmelden und starten</button>
+        </form>
+      </div>
+    </div>
+  {% else %}
   <div class="page">
     <div class="card topbar">
       <div class="logo-block">
         <span class="label-small">04.07 - 26.07</span>
         <div class="headline-text">
-          <h1>tour with friends goes Tour de France</h1>
+          <h1>Tour With Friends</h1>
           <p class="hero-note">Lade deine Aktivitäten als GPX-Datei hoch und sammle jeden Tag Punkte in der Trikotwertung. Alle Teilnehmer erhalten ein Goodie und die Spitzenfahrer sichern sich den Hauptgewinn.</p>
         </div>
       </div>
@@ -90,87 +129,127 @@
       </div>
     </div>
 
-    <div class="layout-two">
-      <div class="card card-hero">
-        <div class="section-title">
-          <h2>Trikotwertung</h2>
-          <span class="badge">Top 3 immer sichtbar</span>
-        </div>
-        <div class="jersey-section">
-          <div class="layout-three">
-            <article class="jersey-panel">
-              <h3 class="jersey-name">Gelbes Trikot</h3>
-              <p class="jersey-desc">Fuer die meisten gefahrenen Kilometer insgesamt.</p>
-              <ol class="top-three">
-                {% for entry in distance_leaderboard[:3] %}
-                  <li><span>{{ loop.index }}. {{ entry.name }}</span><strong>{{ entry.total_distance_km|round(1) }} km</strong></li>
-                {% else %}
-                  <li><span class="muted">Noch keine Eintraege.</span></li>
-                {% endfor %}
-              </ol>
-            </article>
-            <article class="jersey-panel">
-              <h3 class="jersey-name">Bergtrikot</h3>
-              <p class="jersey-desc">Fuer die meisten gesammelten Hoehenmeter.</p>
-              <ol class="top-three">
-                {% for entry in elevation_leaderboard[:3] %}
-                  <li><span>{{ loop.index }}. {{ entry.name }}</span><strong>{{ entry.total_elevation_m|round(1) }} m</strong></li>
-                {% else %}
-                  <li><span class="muted">Noch keine Eintraege.</span></li>
-                {% endfor %}
-              </ol>
-            </article>
-            <article class="jersey-panel">
-              <h3 class="jersey-name">Gruenes Trikot</h3>
-              <p class="jersey-desc">Fuer die meisten aktiven Fahrminuten.</p>
-              <ol class="top-three">
-                {% for entry in duration_leaderboard[:3] %}
-                  <li><span>{{ loop.index }}. {{ entry.name }}</span><strong>{{ entry.total_duration_min|round(1) }} min</strong></li>
-                {% else %}
-                  <li><span class="muted">Noch keine Eintraege.</span></li>
-                {% endfor %}
-              </ol>
-            </article>
-          </div>
+    <div class="card trikot-full">
+      <div class="section-title">
+        <h2>Trikotwertung</h2>
+        <span class="badge">Top 3 auf einen Blick</span>
+      </div>
+      <div class="trikot-stage">
+        <div class="top-three-cards">
+          <article class="trikot-card trikot-yellow">
+            <h3>Gelbes Trikot</h3>
+            <p>Fuehrung nach Gesamt-Kilometern.</p>
+            <ol class="top-three">
+              {% for entry in distance_leaderboard[:3] %}
+                <li>
+                  <span><span class="rank">#{{ loop.index }}</span> {{ entry.name }}</span>
+                  <strong>{{ entry.total_distance_km|round(1) }} km</strong>
+                </li>
+              {% else %}
+                <li><span class="muted">Noch keine Eintraege.</span></li>
+              {% endfor %}
+            </ol>
+          </article>
 
-          <details class="expand-box">
-            <summary>Weiteres Leaderboard anzeigen</summary>
-            <div class="expand-grid">
-              <section class="expand-col">
-                <h4>Gelbes Trikot</h4>
-                <ul>
-                  {% for entry in distance_leaderboard[3:] %}
-                    <li><span>{{ loop.index + 3 }}. {{ entry.name }}</span><strong>{{ entry.total_distance_km|round(1) }} km</strong></li>
-                  {% else %}
-                    <li><span class="muted">Keine weiteren Eintraege.</span></li>
-                  {% endfor %}
-                </ul>
-              </section>
-              <section class="expand-col">
-                <h4>Bergtrikot</h4>
-                <ul>
-                  {% for entry in elevation_leaderboard[3:] %}
-                    <li><span>{{ loop.index + 3 }}. {{ entry.name }}</span><strong>{{ entry.total_elevation_m|round(1) }} m</strong></li>
-                  {% else %}
-                    <li><span class="muted">Keine weiteren Eintraege.</span></li>
-                  {% endfor %}
-                </ul>
-              </section>
-              <section class="expand-col">
-                <h4>Gruenes Trikot</h4>
-                <ul>
-                  {% for entry in duration_leaderboard[3:] %}
-                    <li><span>{{ loop.index + 3 }}. {{ entry.name }}</span><strong>{{ entry.total_duration_min|round(1) }} min</strong></li>
-                  {% else %}
-                    <li><span class="muted">Keine weiteren Eintraege.</span></li>
-                  {% endfor %}
-                </ul>
-              </section>
-            </div>
-          </details>
+          <article class="trikot-card trikot-polka">
+            <h3>Bergtrikot</h3>
+            <p>Die meisten Hoehenmeter mit roten Punkten.</p>
+            <ol class="top-three">
+              {% for entry in elevation_leaderboard[:3] %}
+                <li>
+                  <span><span class="rank">#{{ loop.index }}</span> {{ entry.name }}</span>
+                  <strong>{{ entry.total_elevation_m|round(1) }} m</strong>
+                </li>
+              {% else %}
+                <li><span class="muted">Noch keine Eintraege.</span></li>
+              {% endfor %}
+            </ol>
+          </article>
+
+          <article class="trikot-card trikot-green">
+            <h3>Gruenes Trikot</h3>
+            <p>Die meisten aktiven Fahrminuten.</p>
+            <ol class="top-three">
+              {% for entry in duration_leaderboard[:3] %}
+                <li>
+                  <span><span class="rank">#{{ loop.index }}</span> {{ entry.name }}</span>
+                  <strong>{{ entry.total_duration_min|round(1) }} min</strong>
+                </li>
+              {% else %}
+                <li><span class="muted">Noch keine Eintraege.</span></li>
+              {% endfor %}
+            </ol>
+          </article>
         </div>
+
+        <details class="expand-box">
+          <summary>Weiteres Leaderboard anzeigen</summary>
+          <div class="expand-grid">
+            <section class="expand-col">
+              <h4>Gelbes Trikot</h4>
+              <ul>
+                {% for entry in distance_leaderboard[3:] %}
+                  <li><span>{{ loop.index + 3 }}. {{ entry.name }}</span><strong>{{ entry.total_distance_km|round(1) }} km</strong></li>
+                {% else %}
+                  <li><span class="muted">Keine weiteren Eintraege.</span></li>
+                {% endfor %}
+              </ul>
+            </section>
+            <section class="expand-col">
+              <h4>Bergtrikot</h4>
+              <ul>
+                {% for entry in elevation_leaderboard[3:] %}
+                  <li><span>{{ loop.index + 3 }}. {{ entry.name }}</span><strong>{{ entry.total_elevation_m|round(1) }} m</strong></li>
+                {% else %}
+                  <li><span class="muted">Keine weiteren Eintraege.</span></li>
+                {% endfor %}
+              </ul>
+            </section>
+            <section class="expand-col">
+              <h4>Gruenes Trikot</h4>
+              <ul>
+                {% for entry in duration_leaderboard[3:] %}
+                  <li><span>{{ loop.index + 3 }}. {{ entry.name }}</span><strong>{{ entry.total_duration_min|round(1) }} min</strong></li>
+                {% else %}
+                  <li><span class="muted">Keine weiteren Eintraege.</span></li>
+                {% endfor %}
+              </ul>
+            </section>
+          </div>
+        </details>
+      </div>
+    </div>
+
+    <div class="layout-two">
+      <div class="form-card">
+        <div class="section-title">
+          <h2>Hallo, {{ user.name }}</h2>
+          <span class="badge">Profil</span>
+        </div>
+        <div class="user-pill">
+          {% if user.profile_image %}
+            <img class="avatar" src="{{ url_for('uploaded_file', filename=user.profile_image) }}" alt="Profilbild von {{ user.name }}">
+          {% endif %}
+          <span><strong>{{ user.name }}</strong></span>
+        </div>
+        <p class="hero-note" style="margin-top: 12px;">Du bist angemeldet und kannst jetzt GPX-Dateien hochladen.</p>
       </div>
 
+      <div class="form-card">
+        <div class="section-title">
+          <h2>GPX hochladen</h2>
+          <span class="badge">Upload</span>
+        </div>
+        <form action="{{ url_for('upload') }}" method="post" enctype="multipart/form-data">
+          <label for="gpx_file">GPX-Datei</label>
+          <input id="gpx_file" name="gpx_file" type="file" accept=".gpx" required>
+          <div class="upload-hint"><span>Hinweis:</span> Alte Daten bleiben erhalten und werden dem aktuellen Profil hinzugefuegt.</div>
+          <button class="primary" type="submit">Upload starten</button>
+        </form>
+      </div>
+    </div>
+
+    <div class="layout-two">
       <div class="card card-hero">
         <div class="section-title">
           <h2>Etappensieger</h2>
@@ -189,74 +268,19 @@
           {% endif %}
         </ul>
       </div>
-    </div>
 
-    <div class="layout-two">
-      <div class="form-card">
+      <div class="card card-hero">
         <div class="section-title">
-          <h2>Teilnehmer anmelden</h2>
-          <span class="badge">Anmelden</span>
+          <h2>Gesamtstatistik</h2>
+          <span class="badge">Meine Werte</span>
         </div>
-        {% if user %}
-          <div class="user-pill">
-            {% if user.profile_image %}
-              <img class="avatar" src="{{ url_for('uploaded_file', filename=user.profile_image) }}" alt="Profilbild von {{ user.name }}">
-            {% endif %}
-            <span><strong>{{ user.name }}</strong></span>
-          </div>
-          <div class="hero-note" style="margin-top: 12px;"><strong>Hallo, {{ user.name }}</strong> Du bist angemeldet und kannst jetzt GPX-Dateien hochladen.</div>
-        {% else %}
-          <form action="{{ url_for('login') }}" method="post" enctype="multipart/form-data">
-            <label for="name">Name</label>
-            <input id="name" name="name" placeholder="z. B. Lotti" required>
-            {% if users %}
-              <label for="existing_user">Bestehenden Namen wählen</label>
-              <select id="existing_user" name="existing_user">
-                <option value="">- auswählen -</option>
-                {% for user_option in users %}
-                  <option value="{{ user_option.name }}">{{ user_option.name }}</option>
-                {% endfor %}
-              </select>
-            {% endif %}
-            <label for="profile_image">Profilbild</label>
-            <input id="profile_image" name="profile_image" type="file" accept="image/*">
-            <button class="primary" type="submit">Anmelden</button>
-          </form>
-        {% endif %}
-      </div>
-
-      <div class="form-card">
-        <div class="section-title">
-          <h2>GPX hochladen</h2>
-          <span class="badge">Hochladen</span>
-        </div>
-        {% if user %}
-          <form action="{{ url_for('upload') }}" method="post" enctype="multipart/form-data">
-            <label for="gpx_file">GPX-Datei</label>
-            <input id="gpx_file" name="gpx_file" type="file" accept=".gpx" required>
-            <div class="upload-hint"><span>Hinweis:</span> Alte Daten bleiben erhalten und werden dem aktuellen Profil hinzugefügt.</div>
-            <button class="primary" type="submit">Upload starten</button>
-          </form>
-        {% else %}
-          <div class="mini-card">
-            <p>Bitte melde dich zuerst an, um deine GPX-Dateien zu tracken.</p>
-          </div>
-        {% endif %}
-      </div>
-    </div>
-
-    <div class="card card-hero">
-      <div class="section-title">
-        <h2>Gesamtstatistik</h2>
-        <span class="badge">Meine Werte</span>
-      </div>
         <div class="stats-grid">
           <div class="metric-card">
             <div class="metric-title">Kilometer</div>
             <div class="metric-value">{{ stats.distance|round(1) }} km</div>
           </div>
           <div class="metric-card">
-            <div class="metric-title">Höhenmeter</div>
+            <div class="metric-title">Hoehenmeter</div>
             <div class="metric-value">{{ stats.elevation|round(1) }} m</div>
           </div>
           <div class="metric-card">
@@ -265,23 +289,24 @@
           </div>
         </div>
       </div>
+    </div>
 
-      <div class="card card-hero">
+    <div class="card card-hero">
       <div class="section-title">
         <h2>Deine letzten Fahrten</h2>
         <span class="badge">Aktuell</span>
       </div>
       {% if rides %}
-          <ul class="ride-list">
+        <ul class="ride-list">
           {% for ride in rides %}
-              <li class="ride-item">
-                <div class="ride-meta">
-                  <strong>{{ ride.ride_date }} – {{ ride.filename }}</strong>
-                  <span>{{ ride.distance_km }} km · {{ ride.elevation_m }} m · {{ ride.duration_min }} min</span>
-                </div>
-                <form class="delete-form" action="{{ url_for('delete_ride', ride_id=ride.id) }}" method="post">
-                  <button class="danger" type="submit">Aktivitaet loeschen</button>
-                </form>
+            <li class="ride-item">
+              <div class="ride-meta">
+                <strong>{{ ride.ride_date }} - {{ ride.filename }}</strong>
+                <span>{{ ride.distance_km }} km · {{ ride.elevation_m }} m · {{ ride.duration_min }} min</span>
+              </div>
+              <form class="delete-form" action="{{ url_for('delete_ride', ride_id=ride.id) }}" method="post">
+                <button class="danger" type="submit">Aktivitaet loeschen</button>
+              </form>
             </li>
           {% endfor %}
         </ul>
@@ -290,6 +315,7 @@
       {% endif %}
     </div>
   </div>
+  {% endif %}
 </body>
 </html>
 
