@@ -347,7 +347,7 @@
           </article>
 
           <article class="trikot-card trikot-polka">
-            <h3>Bergtrikot</h3>
+            <h3>Punkte Trikot</h3>
             <p>Wer die meisten Höhenmeter bisher gesammelt hat.</p>
             <ol class="top-three">
               {% for entry in elevation_leaderboard[:3] %}
@@ -401,7 +401,7 @@
               </ul>
             </section>
             <section class="expand-col">
-              <h4>Bergtrikot</h4>
+              <h4>Punkte Trikot</h4>
               <ul>
                 {% for entry in elevation_leaderboard[3:] %}
                   <li><span class="entry-main">{{ loop.index + 3 }}.{% if entry.profile_image %}<img class="entry-avatar" src="{{ url_for('uploaded_file', filename=entry.profile_image) }}" alt="Profilbild von {{ entry.name }}">{% else %}<span class="entry-avatar-fallback">🙂</span>{% endif %}{{ entry.name }}</span><strong>{{ entry.total_elevation_m|round(1) }} m</strong></li>
