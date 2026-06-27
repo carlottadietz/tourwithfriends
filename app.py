@@ -109,10 +109,13 @@ def parse_gpx_metrics(path):
             time_text = None
             for child in element:
                 if child.tag.endswith("ele"):
-                    ele = float(child.text or 0)
+                    try:
+                        ele = float(child.text)
+                    except (TypeError, ValueError):
+                        ele = None
                 elif child.tag.endswith("time"):
                     time_text = child.text
-            points.append({"lat": lat, "lon": lon, "ele": ele or 0, "time": time_text})
+            points.append({"lat": lat, "lon": lon, "ele": ele, "time": time_text})
 
     if len(points) < 2:
         return {"distance_km": 0.0, "elevation_m": 0.0, "duration_min": 0.0, "created_at": None}
@@ -125,9 +128,10 @@ def parse_gpx_metrics(path):
     for point in points:
         if previous is not None:
             total_distance += haversine(previous["lat"], previous["lon"], point["lat"], point["lon"])
-            delta_elevation = point["ele"] - previous["ele"]
-            if delta_elevation > 0:
-                total_elevation += delta_elevation
+            if previous["ele"] is not None and point["ele"] is not None:
+                delta_elevation = point["ele"] - previous["ele"]
+                if delta_elevation > 0:
+                    total_elevation += delta_elevation
 
             if previous["time"] and point["time"]:
                 try:
