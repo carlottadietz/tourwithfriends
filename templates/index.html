@@ -317,12 +317,12 @@
         <div class="top-three-cards">
           <article class="trikot-card trikot-yellow">
             <h3>Gelbes Trikot</h3>
-            <p>Wer die meisten Kilometer in kürzester Zeit fährt.</p>
+            <p>Wer über alle hochgeladenen Fahrten die höchste durchschnittliche km/h erreicht.</p>
             <ol class="top-three">
               {% for entry in yellow_leaderboard[:3] %}
                 <li>
                   <span class="entry-main"><span class="rank">{{ '🥇' if loop.index == 1 else '🥈' if loop.index == 2 else '🥉' }}</span>{% if entry.profile_image %}<img class="entry-avatar" src="{{ url_for('uploaded_file', filename=entry.profile_image) }}" alt="Profilbild von {{ entry.name }}">{% else %}<span class="entry-avatar-fallback">🙂</span>{% endif %}{{ entry.name }}</span>
-                  <strong>{{ entry.total_distance_km|round(1) }} km · {{ entry.total_duration_min|round(1) }} min</strong>
+                  <strong>{{ entry.avg_speed_kmh|round(2) }} km/h · {{ entry.total_distance_km|round(1) }} km</strong>
                 </li>
               {% else %}
                 <li><span class="muted">Noch keine Einträge.</span></li>
@@ -383,7 +383,7 @@
               <h4>Gelbes Trikot</h4>
               <ul>
                 {% for entry in yellow_leaderboard[3:] %}
-                  <li><span class="entry-main">{{ loop.index + 3 }}.{% if entry.profile_image %}<img class="entry-avatar" src="{{ url_for('uploaded_file', filename=entry.profile_image) }}" alt="Profilbild von {{ entry.name }}">{% else %}<span class="entry-avatar-fallback">🙂</span>{% endif %}{{ entry.name }}</span><strong>{{ entry.total_distance_km|round(1) }} km · {{ entry.total_duration_min|round(1) }} min</strong></li>
+                  <li><span class="entry-main">{{ loop.index + 3 }}.{% if entry.profile_image %}<img class="entry-avatar" src="{{ url_for('uploaded_file', filename=entry.profile_image) }}" alt="Profilbild von {{ entry.name }}">{% else %}<span class="entry-avatar-fallback">🙂</span>{% endif %}{{ entry.name }}</span><strong>{{ entry.avg_speed_kmh|round(2) }} km/h · {{ entry.total_distance_km|round(1) }} km</strong></li>
                 {% else %}
                   <li><span class="muted">Keine weiteren Einträge.</span></li>
                 {% endfor %}
