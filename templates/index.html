@@ -109,6 +109,8 @@
     form { display: grid; gap: 14px; }
     input:not([type="radio"]):not([type="file"]), select { width: 100%; border-radius: 14px; border: 1px solid rgba(148,163,184,0.35); background: #f8fafc; color: #1f2937; padding: 14px 16px; }
     input:not([type="radio"]):not([type="file"])::placeholder, select { color: #64748b; }
+    select { appearance: none; -webkit-appearance: none; background-image: linear-gradient(45deg, transparent 50%, #92400e 50%), linear-gradient(135deg, #92400e 50%, transparent 50%), linear-gradient(180deg, rgba(255,255,255,0), rgba(255,255,255,0)); background-position: calc(100% - 22px) calc(50% - 3px), calc(100% - 16px) calc(50% - 3px), 100% 0; background-size: 6px 6px, 6px 6px, 2.5rem 100%; background-repeat: no-repeat; padding-right: 48px; }
+    select:focus, input[type="file"]:focus { outline: none; border-color: rgba(234,179,8,0.75); box-shadow: 0 0 0 4px rgba(250,204,21,0.2); }
     input[type="file"] {
       width: 100%;
       border-radius: 14px;
@@ -147,6 +149,79 @@
     .profile-update-form button { width: fit-content; }
     .action-stack { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 14px; }
     .action-stack-vertical { display: grid; gap: 10px; margin-top: 14px; }
+    .profile-card {
+      position: relative;
+      overflow: hidden;
+      background: linear-gradient(180deg, #fffced 0%, #fff6cc 62%, #ffefad 100%);
+      border: 1px solid rgba(234,179,8,0.3);
+      box-shadow: 0 24px 60px rgba(234,179,8,0.16);
+    }
+    .profile-card::before {
+      content: "";
+      position: absolute;
+      top: -60px;
+      right: -40px;
+      width: 180px;
+      height: 180px;
+      border-radius: 999px;
+      background: radial-gradient(circle, rgba(255,255,255,0.7), rgba(255,255,255,0));
+      pointer-events: none;
+    }
+    .profile-card > * { position: relative; }
+    .profile-card .badge { background: rgba(255,255,255,0.82); border-color: rgba(202,138,4,0.22); color: #92400e; }
+    .profile-card .user-pill {
+      background: rgba(255,255,255,0.76);
+      border-color: rgba(202,138,4,0.18);
+      box-shadow: inset 0 1px 0 rgba(255,255,255,0.72);
+      padding: 14px 18px;
+    }
+    .profile-card .profile-update-form {
+      background: rgba(255,255,255,0.52);
+      border: 1px solid rgba(202,138,4,0.16);
+      border-radius: 20px;
+      padding: 16px;
+      box-shadow: inset 0 1px 0 rgba(255,255,255,0.62);
+    }
+    .profile-card .profile-update-form label { font-weight: 700; color: #78350f; }
+    .profile-card select,
+    .profile-card input[type="file"] {
+      background-color: rgba(255,255,255,0.9);
+      border-color: rgba(202,138,4,0.26);
+      box-shadow: inset 0 1px 0 rgba(255,255,255,0.76);
+    }
+    .profile-card select {
+      border-radius: 16px;
+      min-height: 54px;
+      font-weight: 700;
+      color: #7c5a10;
+      background-image: linear-gradient(45deg, transparent 50%, #a16207 50%), linear-gradient(135deg, #a16207 50%, transparent 50%), linear-gradient(180deg, rgba(255,244,184,0.85), rgba(255,255,255,0));
+      background-position: calc(100% - 22px) calc(50% - 3px), calc(100% - 16px) calc(50% - 3px), 100% 0;
+      background-size: 6px 6px, 6px 6px, 3.2rem 100%;
+    }
+    .profile-card input[type="file"] {
+      border-radius: 18px;
+      padding: 12px;
+    }
+    .profile-card input[type="file"]::file-selector-button {
+      border: 1px solid rgba(202,138,4,0.24);
+      border-radius: 12px;
+      padding: 10px 16px;
+      margin-right: 12px;
+      background: linear-gradient(180deg, #fffef7 0%, #fff4bf 100%);
+      color: #7c5a10;
+      font-weight: 700;
+      box-shadow: 0 4px 10px rgba(234,179,8,0.12);
+    }
+    .profile-card .primary {
+      background: linear-gradient(180deg, #facc15 0%, #fbbf24 100%);
+      box-shadow: 0 10px 24px rgba(234,179,8,0.22);
+      padding-inline: 18px;
+    }
+    .profile-card .secondary {
+      background: rgba(255,255,255,0.78);
+      border: 1px solid rgba(202,138,4,0.18);
+      color: #78350f;
+    }
 
     .trikot-full {
       width: 100%;
@@ -444,7 +519,7 @@
     </div>
 
     <div class="layout-two">
-      <div class="form-card">
+      <div class="form-card profile-card">
         <div class="section-title">
           <h2>Hallo, {{ user.name }}</h2>
           <span class="badge">Profil</span>
