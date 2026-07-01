@@ -183,6 +183,36 @@ def is_allowed_event_date(created_at_iso):
     return (activity_date.month, activity_date.day) >= EVENT_START_MONTH_DAY
 
 
+def get_strava_activity_created_at(activity):
+    local_start = normalize_iso_datetime(activity.get("start_date_local"))
+    if local_start:
+        return local_start
+    return normalize_iso_datetime(activity.get("start_date"))
+
+
+def recalculate_user_totals(conn, user_id):
+    totals = conn.execute(
+        """
+        SELECT
+            COALESCE(SUM(distance_km), 0) AS total_distance_km,
+            COALESCE(SUM(elevation_m), 0) AS total_elevation_m,
+            COALESCE(SUM(duration_min), 0) AS total_duration_min
+        FROM rides
+        WHERE user_id = ?
+        """,
+        (user_id,),
+    ).fetchone()
+    conn.execute(
+        "UPDATE users SET total_distance_km = ?, total_elevation_m = ?, total_duration_min = ? WHERE id = ?",
+        (
+            round(totals["total_distance_km"], 2),
+            round(totals["total_elevation_m"], 2),
+            round(totals["total_duration_min"], 2),
+            user_id,
+        ),
+    )
+
+
 def normalize_gender(raw_gender):
     if not raw_gender:
         return None
@@ -289,6 +319,13 @@ def import_strava_activities_for_user(conn, user):
     if not access_token:
         return 0
 
+    event_start_date = f"{datetime.now().year:04d}-{EVENT_START_MONTH_DAY[0]:02d}-{EVENT_START_MONTH_DAY[1]:02d}"
+    conn.execute(
+        "DELETE FROM rides WHERE user_id = ? AND strava_activity_id IS NOT NULL AND date(created_at) < ?",
+        (user["id"], event_start_date),
+    )
+    recalculate_user_totals(conn, user["id"])
+
     imported_count = 0
     total_distance = 0.0
     total_elevation = 0.0
@@ -299,7 +336,11 @@ def import_strava_activities_for_user(conn, user):
         activities = get_json(
             f"{STRAVA_API_BASE}/athlete/activities",
             headers=headers,
-            query={"per_page": 50, "page": page},
+            query={
+                "per_page": 50,
+                "page": page,
+                "after": int(datetime(2026, EVENT_START_MONTH_DAY[0], EVENT_START_MONTH_DAY[1], tzinfo=timezone.utc).timestamp()),
+            },
         )
         if not isinstance(activities, list) or not activities:
             break
@@ -320,7 +361,7 @@ def import_strava_activities_for_user(conn, user):
             if exists:
                 continue
 
-            created_at = normalize_iso_datetime(activity.get("start_date"))
+            created_at = get_strava_activity_created_at(activity)
             if not created_at or not is_allowed_event_date(created_at):
                 continue
 
@@ -1054,26 +1095,7 @@ def delete_ride(ride_id):
         return redirect(url_for("index"))
 
     conn.execute("DELETE FROM rides WHERE id = ?", (ride_id,))
-    totals = conn.execute(
-        """
-        SELECT
-            COALESCE(SUM(distance_km), 0) AS total_distance_km,
-            COALESCE(SUM(elevation_m), 0) AS total_elevation_m,
-            COALESCE(SUM(duration_min), 0) AS total_duration_min
-        FROM rides
-        WHERE user_id = ?
-        """,
-        (user["id"],),
-    ).fetchone()
-    conn.execute(
-        "UPDATE users SET total_distance_km = ?, total_elevation_m = ?, total_duration_min = ? WHERE id = ?",
-        (
-            round(totals["total_distance_km"], 2),
-            round(totals["total_elevation_m"], 2),
-            round(totals["total_duration_min"], 2),
-            user["id"],
-        ),
-    )
+    recalculate_user_totals(conn, user["id"])
     conn.commit()
 
     filepath = os.path.join(app.config["UPLOAD_FOLDER"], ride["filename"])

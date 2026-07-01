@@ -4,7 +4,9 @@ import tempfile
 import unittest
 from io import BytesIO
 
-from app import app, init_db, parse_gpx_metrics
+from unittest.mock import patch
+
+from app import app, get_db, import_strava_activities_for_user, init_db, parse_gpx_metrics
 
 
 class TourWithFriendsTests(unittest.TestCase):
@@ -116,6 +118,85 @@ class TourWithFriendsTests(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertIn(b"Kommentar wurde gespeichert", response.data)
         self.assertIn(b"Ich schaue es mir an.", response.data)
+
+    @patch("app.get_valid_strava_token", return_value="token")
+    @patch("app.get_json")
+    def test_strava_import_uses_only_activities_from_04_07_onward(self, get_json_mock, _token_mock):
+        get_json_mock.side_effect = [
+            [
+                {
+                    "id": 1001,
+                    "type": "Ride",
+                    "distance": 15000,
+                    "total_elevation_gain": 180,
+                    "moving_time": 2400,
+                    "name": "03.07 Ride",
+                    "start_date": "2026-07-03T23:30:00Z",
+                    "start_date_local": "2026-07-03T23:30:00",
+                },
+                {
+                    "id": 1002,
+                    "type": "Ride",
+                    "distance": 22000,
+                    "total_elevation_gain": 240,
+                    "moving_time": 3600,
+                    "name": "04.07 Ride",
+                    "start_date": "2026-07-04T07:00:00Z",
+                    "start_date_local": "2026-07-04T09:00:00",
+                },
+            ],
+            [],
+        ]
+
+        with app.app_context():
+            conn = get_db()
+            conn.execute(
+                "INSERT INTO users (name, gender, profile_image, total_distance_km) VALUES (?, ?, ?, 0)",
+                ("Strava Tester", "Homme", "avatar.png"),
+            )
+            conn.commit()
+            user = conn.execute("SELECT * FROM users WHERE name = ?", ("Strava Tester",)).fetchone()
+
+            imported_count = import_strava_activities_for_user(conn, user)
+
+            rides = conn.execute("SELECT strava_activity_id, created_at FROM rides ORDER BY id ASC").fetchall()
+
+        self.assertEqual(imported_count, 1)
+        self.assertEqual(len(rides), 1)
+        self.assertEqual(rides[0]["strava_activity_id"], "1002")
+        self.assertTrue(rides[0]["created_at"].startswith("2026-07-04"))
+        self.assertEqual(get_json_mock.call_args_list[0].kwargs["query"]["after"], 1783123200)
+
+    @patch("app.get_valid_strava_token", return_value="token")
+    @patch("app.get_json", return_value=[])
+    def test_strava_import_removes_existing_pre_event_strava_rides(self, _get_json_mock, _token_mock):
+        with app.app_context():
+            conn = get_db()
+            conn.execute(
+                "INSERT INTO users (name, gender, profile_image, total_distance_km, total_elevation_m, total_duration_min) VALUES (?, ?, ?, ?, ?, ?)",
+                ("Cleanup Tester", "Homme", "avatar.png", 50.0, 500.0, 120.0),
+            )
+            conn.commit()
+            user = conn.execute("SELECT * FROM users WHERE name = ?", ("Cleanup Tester",)).fetchone()
+            conn.execute(
+                "INSERT INTO rides (user_id, filename, distance_km, elevation_m, duration_min, created_at, strava_activity_id) VALUES (?, ?, ?, ?, ?, ?, ?)",
+                (user["id"], "old_strava.gpx", 50.0, 500.0, 120.0, "2026-07-03T08:00:00", "legacy-1"),
+            )
+            conn.commit()
+
+            imported_count = import_strava_activities_for_user(conn, user)
+
+            remaining_rides = conn.execute("SELECT COUNT(*) AS count FROM rides WHERE user_id = ?", (user["id"],)).fetchone()["count"]
+            updated_user = conn.execute(
+                "SELECT total_distance_km, total_elevation_m, total_duration_min FROM users WHERE id = ?",
+                (user["id"],),
+            ).fetchone()
+
+        self.assertEqual(imported_count, 0)
+        self.assertEqual(remaining_rides, 0)
+        self.assertEqual(updated_user["total_distance_km"], 0)
+        self.assertEqual(updated_user["total_elevation_m"], 0)
+        self.assertEqual(updated_user["total_duration_min"], 0)
 
     def test_parse_gpx_metrics_reads_distance_elevation_and_duration(self):
         gpx_content = """<?xml version='1.0' encoding='UTF-8'?>

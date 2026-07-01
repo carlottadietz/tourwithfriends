@@ -317,23 +317,6 @@
             {% endif %}
           </div>
         </div>
-        {% if daily_winners %}
-          <div class="winner-row">
-            <div class="winner-photo-figure">
-              {% if daily_winners[0].profile_image %}
-                <img class="winner-head" src="{{ url_for('uploaded_file', filename=daily_winners[0].profile_image) }}" alt="Profilbild von {{ daily_winners[0].user_name }}">
-              {% else %}
-                <span class="winner-head-placeholder">🙂</span>
-              {% endif %}
-            </div>
-            <div class="winner-text">
-              <span class="winner-name">Aktueller Filter: {{ selected_gender }} · {{ daily_winners[0].user_name }}</span>
-              <span class="winner-meta">{{ daily_winners[0].day }} · {{ daily_winners[0].distance_km }} km · {{ daily_winners[0].avg_speed_kmh|round(2) }} km/h</span>
-            </div>
-          </div>
-        {% else %}
-          <p class="hero-note">Noch kein Etappensieger im Filter {{ selected_gender }}.</p>
-        {% endif %}
       </div>
     </div>
 
