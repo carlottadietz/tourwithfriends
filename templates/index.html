@@ -206,6 +206,7 @@
     .delete-form { margin: 0; }
     .delete-form button { padding: 8px 12px; font-size: 0.88rem; }
     .muted { color: #64748b; }
+    .ride-actions { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
     .support-fab {
       position: fixed;
       right: 24px;
@@ -571,7 +572,14 @@
     <div class="card card-hero">
       <div class="section-title">
         <h2>Deine letzten Fahrten</h2>
-        <span class="badge">Aktuell</span>
+        <div class="ride-actions">
+          <span class="badge">Aktuell</span>
+          {% if rides %}
+            <form class="delete-form" action="{{ url_for('delete_all_rides') }}" method="post">
+              <button class="danger" type="submit">Alle Aktivitäten löschen</button>
+            </form>
+          {% endif %}
+        </div>
       </div>
       {% if rides %}
         <ul class="ride-list">

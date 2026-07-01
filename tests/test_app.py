@@ -345,6 +345,47 @@ class TourWithFriendsTests(unittest.TestCase):
         self.assertEqual(totals[2], 0)
         conn.close()
 
+    def test_user_can_delete_all_own_rides(self):
+        self.client.post(
+            "/login",
+            data={"name": "Anna", "gender": "Femme", "profile_image": (BytesIO(b"fake-image-data"), "avatar.png")},
+            content_type="multipart/form-data",
+            follow_redirects=True,
+        )
+
+        conn = sqlite3.connect(self.db_path)
+        user_id = conn.execute("SELECT id FROM users WHERE name = ?", ("Anna",)).fetchone()[0]
+        conn.execute(
+            "UPDATE users SET total_distance_km = ?, total_elevation_m = ?, total_duration_min = ? WHERE id = ?",
+            (60.0, 900.0, 150.0, user_id),
+        )
+        conn.execute(
+            "INSERT INTO rides (user_id, filename, distance_km, elevation_m, duration_min, created_at) VALUES (?, ?, ?, ?, ?, ?)",
+            (user_id, "ride_a.gpx", 25.0, 300.0, 60.0, "2026-07-05T08:00:00"),
+        )
+        conn.execute(
+            "INSERT INTO rides (user_id, filename, distance_km, elevation_m, duration_min, created_at) VALUES (?, ?, ?, ?, ?, ?)",
+            (user_id, "ride_b.gpx", 35.0, 600.0, 90.0, "2026-07-06T09:00:00"),
+        )
+        conn.commit()
+        conn.close()
+
+        response = self.client.post("/rides/delete-all", follow_redirects=True)
+        self.assertEqual(response.status_code, 200)
+        self.assertIn(b"Lade deine erste GPX-Datei hoch", response.data)
+
+        conn = sqlite3.connect(self.db_path)
+        remaining = conn.execute("SELECT COUNT(*) FROM rides WHERE user_id = ?", (user_id,)).fetchone()[0]
+        self.assertEqual(remaining, 0)
+        totals = conn.execute(
+            "SELECT total_distance_km, total_elevation_m, total_duration_min FROM users WHERE id = ?",
+            (user_id,),
+        ).fetchone()
+        self.assertEqual(totals[0], 0)
+        self.assertEqual(totals[1], 0)
+        self.assertEqual(totals[2], 0)
+        conn.close()
+
 
 if __name__ == "__main__":
     unittest.main()

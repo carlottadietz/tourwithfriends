@@ -1128,6 +1128,32 @@ def delete_ride(ride_id):
     return redirect(url_for("index"))
 
 
+@app.route("/rides/delete-all", methods=["POST"])
+def delete_all_rides():
+    user = get_current_user()
+    if not user:
+        return redirect(url_for("index"))
+
+    conn = get_db()
+    rides = conn.execute(
+        "SELECT filename FROM rides WHERE user_id = ?",
+        (user["id"],),
+    ).fetchall()
+    if not rides:
+        return redirect(url_for("index"))
+
+    conn.execute("DELETE FROM rides WHERE user_id = ?", (user["id"],))
+    recalculate_user_totals(conn, user["id"])
+    conn.commit()
+
+    for ride in rides:
+        filepath = os.path.join(app.config["UPLOAD_FOLDER"], ride["filename"])
+        if os.path.exists(filepath):
+            os.remove(filepath)
+
+    return redirect(url_for("index"))
+
+
 @app.route("/uploads/<filename>")
 def uploaded_file(filename):
     return send_from_directory(app.config["UPLOAD_FOLDER"], filename)
