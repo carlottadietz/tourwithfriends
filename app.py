@@ -1,10 +1,14 @@
 import os
 import sqlite3
 import uuid
+import json
 from datetime import datetime, timezone, timedelta
 from math import atan2, cos, radians, sin, sqrt
 from pathlib import Path
 import xml.etree.ElementTree as ET
+from urllib.error import HTTPError, URLError
+from urllib.parse import urlencode
+from urllib.request import Request, urlopen
 
 from flask import Flask, g, redirect, render_template, request, send_from_directory, session, url_for
 from werkzeug.utils import secure_filename
@@ -14,9 +18,16 @@ app.config.update(
     SECRET_KEY=os.environ.get("SECRET_KEY", "tour-with-friends-secret"),
     DATABASE_PATH=os.environ.get("DATABASE_PATH", str(Path(__file__).resolve().parent / "tourwithfriends.db")),
     UPLOAD_FOLDER=os.environ.get("UPLOAD_FOLDER", str(Path(__file__).resolve().parent / "uploads")),
+    STRAVA_CLIENT_ID=os.environ.get("STRAVA_CLIENT_ID", ""),
+    STRAVA_CLIENT_SECRET=os.environ.get("STRAVA_CLIENT_SECRET", ""),
+    STRAVA_REDIRECT_URI=os.environ.get("STRAVA_REDIRECT_URI", ""),
     MAX_CONTENT_LENGTH=16 * 1024 * 1024,
     PERMANENT_SESSION_LIFETIME=timedelta(days=40),
 )
+
+STRAVA_AUTH_URL = "https://www.strava.com/oauth/authorize"
+STRAVA_TOKEN_URL = "https://www.strava.com/oauth/token"
+STRAVA_API_BASE = "https://www.strava.com/api/v3"
 
 
 def init_db():
@@ -53,6 +64,19 @@ def init_db():
     column_names = {col[1] for col in columns}
     if "gender" not in column_names:
         conn.execute("ALTER TABLE users ADD COLUMN gender TEXT NOT NULL DEFAULT 'Homme'")
+    if "strava_athlete_id" not in column_names:
+        conn.execute("ALTER TABLE users ADD COLUMN strava_athlete_id TEXT")
+    if "strava_access_token" not in column_names:
+        conn.execute("ALTER TABLE users ADD COLUMN strava_access_token TEXT")
+    if "strava_refresh_token" not in column_names:
+        conn.execute("ALTER TABLE users ADD COLUMN strava_refresh_token TEXT")
+    if "strava_token_expires_at" not in column_names:
+        conn.execute("ALTER TABLE users ADD COLUMN strava_token_expires_at INTEGER DEFAULT 0")
+
+    ride_columns = conn.execute("PRAGMA table_info(rides)").fetchall()
+    ride_column_names = {col[1] for col in ride_columns}
+    if "strava_activity_id" not in ride_column_names:
+        conn.execute("ALTER TABLE rides ADD COLUMN strava_activity_id TEXT")
     conn.commit()
     conn.close()
 
@@ -143,6 +167,173 @@ def normalize_gender(raw_gender):
     if lowered == "homme":
         return "Homme"
     return None
+
+
+def normalize_iso_datetime(raw_value):
+    if not raw_value:
+        return None
+    try:
+        parsed = datetime.fromisoformat(str(raw_value).replace("Z", "+00:00"))
+    except ValueError:
+        return None
+    if parsed.tzinfo is not None:
+        parsed = parsed.astimezone(timezone.utc).replace(tzinfo=None)
+    return parsed.isoformat()
+
+
+def build_unique_username(conn, base_name):
+    root_name = (base_name or "Strava Rider").strip() or "Strava Rider"
+    candidate = root_name
+    suffix = 2
+    while conn.execute("SELECT 1 FROM users WHERE name = ?", (candidate,)).fetchone():
+        candidate = f"{root_name} {suffix}"
+        suffix += 1
+    return candidate
+
+
+def post_form_json(url, payload):
+    body = urlencode(payload).encode("utf-8")
+    req = Request(url, data=body, method="POST")
+    req.add_header("Content-Type", "application/x-www-form-urlencoded")
+    try:
+        with urlopen(req, timeout=20) as response:
+            return json.loads(response.read().decode("utf-8"))
+    except (HTTPError, URLError, TimeoutError, json.JSONDecodeError):
+        return None
+
+
+def get_json(url, headers=None, query=None):
+    query = query or {}
+    query_string = urlencode(query)
+    full_url = f"{url}?{query_string}" if query_string else url
+    req = Request(full_url, method="GET")
+    for key, value in (headers or {}).items():
+        req.add_header(key, value)
+    try:
+        with urlopen(req, timeout=20) as response:
+            return json.loads(response.read().decode("utf-8"))
+    except (HTTPError, URLError, TimeoutError, json.JSONDecodeError):
+        return None
+
+
+def refresh_strava_access_token(conn, user):
+    refresh_token = user["strava_refresh_token"]
+    if not refresh_token or not app.config["STRAVA_CLIENT_ID"] or not app.config["STRAVA_CLIENT_SECRET"]:
+        return None
+
+    refreshed = post_form_json(
+        STRAVA_TOKEN_URL,
+        {
+            "client_id": app.config["STRAVA_CLIENT_ID"],
+            "client_secret": app.config["STRAVA_CLIENT_SECRET"],
+            "grant_type": "refresh_token",
+            "refresh_token": refresh_token,
+        },
+    )
+    if not refreshed or not refreshed.get("access_token"):
+        return None
+
+    conn.execute(
+        """
+        UPDATE users
+        SET strava_access_token = ?, strava_refresh_token = ?, strava_token_expires_at = ?
+        WHERE id = ?
+        """,
+        (
+            refreshed.get("access_token"),
+            refreshed.get("refresh_token", refresh_token),
+            int(refreshed.get("expires_at", 0) or 0),
+            user["id"],
+        ),
+    )
+    conn.commit()
+    return refreshed.get("access_token")
+
+
+def get_valid_strava_token(conn, user):
+    now_ts = int(datetime.now(timezone.utc).timestamp())
+    token = user["strava_access_token"]
+    expires_at = int(user["strava_token_expires_at"] or 0)
+    if token and expires_at - 60 > now_ts:
+        return token
+    return refresh_strava_access_token(conn, user)
+
+
+def import_strava_activities_for_user(conn, user):
+    access_token = get_valid_strava_token(conn, user)
+    if not access_token:
+        return 0
+
+    imported_count = 0
+    total_distance = 0.0
+    total_elevation = 0.0
+    total_duration = 0.0
+
+    headers = {"Authorization": f"Bearer {access_token}"}
+    for page in range(1, 6):
+        activities = get_json(
+            f"{STRAVA_API_BASE}/athlete/activities",
+            headers=headers,
+            query={"per_page": 50, "page": page},
+        )
+        if not isinstance(activities, list) or not activities:
+            break
+
+        for activity in activities:
+            activity_type = str(activity.get("type", ""))
+            if activity_type not in {"Ride", "VirtualRide", "EBikeRide"}:
+                continue
+
+            strava_activity_id = str(activity.get("id", "")).strip()
+            if not strava_activity_id:
+                continue
+
+            exists = conn.execute(
+                "SELECT 1 FROM rides WHERE user_id = ? AND strava_activity_id = ?",
+                (user["id"], strava_activity_id),
+            ).fetchone()
+            if exists:
+                continue
+
+            created_at = normalize_iso_datetime(activity.get("start_date"))
+            if not created_at or not is_allowed_event_date(created_at):
+                continue
+
+            distance_km = round(float(activity.get("distance", 0.0)) / 1000.0, 2)
+            elevation_m = round(float(activity.get("total_elevation_gain", 0.0)), 2)
+            duration_min = round(float(activity.get("moving_time", 0.0)) / 60.0, 2)
+            ride_name = (activity.get("name") or f"Strava Ride {strava_activity_id}").strip()
+            filename = f"strava_{strava_activity_id}_{secure_filename(ride_name)}"
+
+            conn.execute(
+                """
+                INSERT INTO rides (user_id, filename, distance_km, elevation_m, duration_min, created_at, strava_activity_id)
+                VALUES (?, ?, ?, ?, ?, ?, ?)
+                """,
+                (user["id"], filename, distance_km, elevation_m, duration_min, created_at, strava_activity_id),
+            )
+            imported_count += 1
+            total_distance += distance_km
+            total_elevation += elevation_m
+            total_duration += duration_min
+
+        if len(activities) < 50:
+            break
+
+    if imported_count:
+        conn.execute(
+            """
+            UPDATE users
+            SET total_distance_km = total_distance_km + ?,
+                total_elevation_m = total_elevation_m + ?,
+                total_duration_min = total_duration_min + ?
+            WHERE id = ?
+            """,
+            (round(total_distance, 2), round(total_elevation, 2), round(total_duration, 2), user["id"]),
+        )
+        conn.commit()
+
+    return imported_count
 
 def parse_gpx_metrics(path):
     tree = ET.parse(path)
@@ -345,6 +536,10 @@ def index():
             "duration": user["total_duration_min"],
         }
 
+    strava_connected = bool(user and user["strava_refresh_token"])
+    strava_enabled = bool(app.config["STRAVA_CLIENT_ID"] and app.config["STRAVA_CLIENT_SECRET"])
+    strava_imported_count = session.pop("strava_imported_count", None)
+
     return render_template(
         "index.html",
         user=user,
@@ -362,6 +557,9 @@ def index():
         daily_winner_femme=daily_winner_femme,
         stage_days=stage_days,
         rides=rides,
+        strava_enabled=strava_enabled,
+        strava_connected=strava_connected,
+        strava_imported_count=strava_imported_count,
     )
 
 
@@ -419,6 +617,171 @@ def login():
 @app.route("/logout", methods=["POST"])
 def logout():
     session.clear()
+    return redirect(url_for("index"))
+
+
+@app.route("/strava/login")
+def strava_login():
+    if not app.config["STRAVA_CLIENT_ID"] or not app.config["STRAVA_CLIENT_SECRET"]:
+        return redirect(url_for("index"))
+
+    current_user = get_current_user()
+    if current_user:
+        session["strava_link_user_id"] = current_user["id"]
+    else:
+        session.pop("strava_link_user_id", None)
+
+    state = uuid.uuid4().hex
+    session["strava_oauth_state"] = state
+    redirect_uri = app.config["STRAVA_REDIRECT_URI"] or url_for("strava_callback", _external=True)
+    params = {
+        "client_id": app.config["STRAVA_CLIENT_ID"],
+        "response_type": "code",
+        "redirect_uri": redirect_uri,
+        "approval_prompt": "auto",
+        "scope": "read,activity:read_all",
+        "state": state,
+    }
+    return redirect(f"{STRAVA_AUTH_URL}?{urlencode(params)}")
+
+
+@app.route("/strava/callback")
+def strava_callback():
+    expected_state = session.pop("strava_oauth_state", "")
+    if not expected_state or request.args.get("state") != expected_state:
+        return redirect(url_for("index"))
+
+    code = request.args.get("code", "")
+    if not code:
+        return redirect(url_for("index"))
+
+    redirect_uri = app.config["STRAVA_REDIRECT_URI"] or url_for("strava_callback", _external=True)
+    token_data = post_form_json(
+        STRAVA_TOKEN_URL,
+        {
+            "client_id": app.config["STRAVA_CLIENT_ID"],
+            "client_secret": app.config["STRAVA_CLIENT_SECRET"],
+            "code": code,
+            "grant_type": "authorization_code",
+            "redirect_uri": redirect_uri,
+        },
+    )
+    if not token_data or not token_data.get("access_token"):
+        return redirect(url_for("index"))
+
+    athlete = token_data.get("athlete") or {}
+    athlete_id = str(athlete.get("id", "")).strip()
+    if not athlete_id:
+        athlete_profile = get_json(
+            f"{STRAVA_API_BASE}/athlete",
+            headers={"Authorization": f"Bearer {token_data['access_token']}"},
+        )
+        athlete = athlete_profile if isinstance(athlete_profile, dict) else {}
+        athlete_id = str(athlete.get("id", "")).strip()
+    if not athlete_id:
+        return redirect(url_for("index"))
+
+    first_name = (athlete.get("firstname") or "").strip()
+    last_name = (athlete.get("lastname") or "").strip()
+    base_name = f"{first_name} {last_name}".strip() or f"Strava {athlete_id}"
+
+    conn = get_db()
+    link_user_id = session.pop("strava_link_user_id", None)
+    existing_owner = conn.execute("SELECT * FROM users WHERE strava_athlete_id = ?", (athlete_id,)).fetchone()
+
+    if link_user_id:
+        linked_user = conn.execute("SELECT * FROM users WHERE id = ?", (link_user_id,)).fetchone()
+        if not linked_user:
+            return redirect(url_for("index"))
+        if existing_owner and existing_owner["id"] != linked_user["id"]:
+            return redirect(url_for("index"))
+
+        conn.execute(
+            """
+            UPDATE users
+            SET strava_athlete_id = ?,
+                strava_access_token = ?,
+                strava_refresh_token = ?,
+                strava_token_expires_at = ?
+            WHERE id = ?
+            """,
+            (
+                athlete_id,
+                token_data.get("access_token"),
+                token_data.get("refresh_token"),
+                int(token_data.get("expires_at", 0) or 0),
+                linked_user["id"],
+            ),
+        )
+        conn.commit()
+        user = conn.execute("SELECT * FROM users WHERE id = ?", (linked_user["id"],)).fetchone()
+    elif existing_owner:
+        conn.execute(
+            """
+            UPDATE users
+            SET strava_access_token = ?,
+                strava_refresh_token = ?,
+                strava_token_expires_at = ?
+            WHERE id = ?
+            """,
+            (
+                token_data.get("access_token"),
+                token_data.get("refresh_token"),
+                int(token_data.get("expires_at", 0) or 0),
+                existing_owner["id"],
+            ),
+        )
+        conn.commit()
+        user = conn.execute("SELECT * FROM users WHERE id = ?", (existing_owner["id"],)).fetchone()
+    else:
+        name = build_unique_username(conn, base_name)
+        cur = conn.execute(
+            """
+            INSERT INTO users (
+                name,
+                gender,
+                profile_image,
+                total_distance_km,
+                total_elevation_m,
+                total_duration_min,
+                strava_athlete_id,
+                strava_access_token,
+                strava_refresh_token,
+                strava_token_expires_at
+            )
+            VALUES (?, 'Homme', NULL, 0, 0, 0, ?, ?, ?, ?)
+            """,
+            (
+                name,
+                athlete_id,
+                token_data.get("access_token"),
+                token_data.get("refresh_token"),
+                int(token_data.get("expires_at", 0) or 0),
+            ),
+        )
+        conn.commit()
+        user = conn.execute("SELECT * FROM users WHERE id = ?", (cur.lastrowid,)).fetchone()
+
+    imported_count = import_strava_activities_for_user(conn, user)
+    session["strava_imported_count"] = imported_count
+    session.permanent = True
+    session["user_id"] = user["id"]
+    session["user_name"] = user["name"]
+    session["user_gender"] = user["gender"]
+    return redirect(url_for("index"))
+
+
+@app.route("/strava/import", methods=["POST"])
+def strava_import():
+    user = get_current_user()
+    if not user:
+        return redirect(url_for("index"))
+    if not user["strava_refresh_token"]:
+        return redirect(url_for("strava_login"))
+
+    conn = get_db()
+    imported_count = import_strava_activities_for_user(conn, user)
+    session["strava_imported_count"] = imported_count
     return redirect(url_for("index"))
 
 
