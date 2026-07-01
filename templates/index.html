@@ -17,7 +17,7 @@
       --tour-red: #dc2626;
       --tour-ink: #0f172a;
     }
-    body { font-family: Inter, system-ui, sans-serif; min-height: 100vh; background: radial-gradient(circle at 12% 8%, #fff7cc 0%, #fefce8 20%, transparent 45%), linear-gradient(180deg, #f8fafc 0%, #ffffff 40%, #e2e8f0 100%); color: #1f2937; margin: 0; padding: 24px; }
+    body { font-family: Inter, system-ui, sans-serif; min-height: 100vh; background: radial-gradient(circle at 12% 8%, #fff7cc 0%, #fefce8 20%, transparent 45%), linear-gradient(180deg, #f8fafc 0%, #ffffff 40%, #e2e8f0 100%); color: #0f172a; margin: 0; padding: 24px; }
     .page { max-width: 1180px; margin: 0 auto; display: grid; gap: 24px; }
     .card { background: rgba(255,255,255,0.97); border: 1px solid rgba(148,163,184,0.24); border-radius: 30px; padding: 24px; box-shadow: 0 24px 60px rgba(148,163,184,0.16); }
     .topbar { position: relative; overflow: hidden; display: grid; grid-template-columns: 2fr 1fr; gap: 20px; align-items: stretch; }
@@ -25,8 +25,8 @@
     .logo-block { display: grid; gap: 12px; }
     .label-small { color: #ca8a04; font-size: 0.9rem; letter-spacing: 0.18em; text-transform: uppercase; }
     h1 { margin: 0; font-family: "Barlow Condensed", Inter, sans-serif; font-size: clamp(2.3rem, 4vw, 4rem); letter-spacing: 0.01em; text-transform: uppercase; color: var(--tour-ink); }
-    h2 { margin: 0; font-size: 1.2rem; letter-spacing: -0.02em; }
-    p, label { color: #475569; line-height: 1.6; }
+    h2 { margin: 0; font-size: clamp(1.5rem, 2.2vw, 1.95rem); letter-spacing: -0.03em; color: #0f172a; }
+    p, label { color: #0f172a; line-height: 1.6; }
     .headline-text { display: grid; gap: 10px; max-width: 700px; }
     .event-box { position: relative; background: linear-gradient(145deg, #ffffff, #f8fafc); border-radius: 24px; padding: 20px 24px; border: 1px solid rgba(148,163,184,0.25); box-shadow: 0 18px 36px rgba(148,163,184,0.14); }
     .event-box strong { display: block; font-size: 1rem; margin-bottom: 6px; }
@@ -38,15 +38,15 @@
     .tour-chip.green { background: #dcfce7; border-color: rgba(22,163,74,0.45); }
     .stage-hero { position: relative; overflow: hidden; background: linear-gradient(145deg, #fde68a, #facc15); border-radius: 24px; padding: 18px 18px; display: grid; gap: 10px; border: 2px solid #eab308; }
     .stage-hero::before { content: ""; position: absolute; right: -30px; top: -30px; width: 120px; height: 120px; border-radius: 999px; background: radial-gradient(circle, rgba(255,255,255,0.55), rgba(255,255,255,0)); }
-    .stage-hero h3 { margin: 0; font-size: 1.05rem; }
+    .stage-hero h3 { margin: 0; font-size: clamp(1.35rem, 2vw, 1.7rem); color: #0f172a; }
     .duel-stage-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
     .stage-gender-card { background: rgba(255,255,255,0.35); border: 1px solid rgba(15,23,42,0.1); border-radius: 14px; padding: 10px; display: grid; gap: 6px; }
-    .stage-gender-title { font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.09em; color: #334155; font-weight: 800; }
+    .stage-gender-title { font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.09em; color: #0f172a; font-weight: 800; }
     .stage-gender-main { display: flex; align-items: center; gap: 8px; }
     .stage-gender-avatar { width: 46px; height: 46px; border-radius: 999px; object-fit: cover; border: 2px solid rgba(255,255,255,0.9); }
     .stage-gender-fallback { width: 46px; height: 46px; border-radius: 999px; display: inline-flex; align-items: center; justify-content: center; background: rgba(255,255,255,0.8); font-size: 1.1rem; }
     .stage-gender-name { font-weight: 900; color: #0f172a; }
-    .stage-gender-meta { color: #334155; font-size: 0.86rem; }
+    .stage-gender-meta { color: #0f172a; font-size: 0.86rem; }
     .winner-row { display: flex; align-items: center; gap: 14px; }
     .winner-photo-figure {
       position: relative;
@@ -84,19 +84,19 @@
     }
     .winner-text { display: grid; gap: 2px; }
     .winner-name { font-size: 1rem; font-weight: 900; color: #0f172a; }
-    .winner-meta { font-size: 0.9rem; color: #334155; }
+    .winner-meta { font-size: 0.9rem; color: #0f172a; }
     .layout-two { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px; }
     .layout-three { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
     .section-title { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 16px; }
-    .badge { display: inline-flex; align-items: center; gap: 8px; padding: 8px 12px; border-radius: 18px; font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.12em; background: #f8fafc; border: 1px solid rgba(148,163,184,0.25); color: #334155; }
-    .hero-note { color: #475569; }
+    .badge { display: inline-flex; align-items: center; gap: 8px; padding: 8px 12px; border-radius: 18px; font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.12em; background: #f8fafc; border: 1px solid rgba(148,163,184,0.25); color: #0f172a; }
+    .hero-note { color: #0f172a; }
     .gender-switch { display: inline-flex; gap: 8px; background: #f8fafc; border: 1px solid rgba(148,163,184,0.3); border-radius: 999px; padding: 6px; }
-    .gender-link { text-decoration: none; color: #334155; padding: 8px 12px; border-radius: 999px; font-weight: 800; font-size: 0.88rem; }
+    .gender-link { text-decoration: none; color: #0f172a; padding: 8px 12px; border-radius: 999px; font-weight: 800; font-size: 0.88rem; }
     .gender-link.active { background: #facc15; color: #0f172a; }
     .gender-fieldset { border: 1px solid rgba(148,163,184,0.3); border-radius: 14px; padding: 10px 12px; background: #f8fafc; }
-    .gender-fieldset legend { padding: 0 6px; color: #334155; font-weight: 700; }
+    .gender-fieldset legend { padding: 0 6px; color: #0f172a; font-weight: 700; }
     .gender-options { display: flex; gap: 20px; align-items: center; }
-    .gender-options label { display: inline-flex; gap: 8px; align-items: center; color: #334155; font-weight: 600; }
+    .gender-options label { display: inline-flex; gap: 8px; align-items: center; color: #0f172a; font-weight: 600; }
     .gender-options input[type="radio"] { width: auto; margin: 0; }
 
     .login-shell { max-width: 560px; margin: 8vh auto 0; }
