@@ -145,6 +145,7 @@
     .profile-update-form input { padding: 10px 12px; }
     .profile-update-form button { width: fit-content; }
     .action-stack { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 14px; }
+    .action-stack-vertical { display: grid; gap: 10px; margin-top: 14px; }
 
     .trikot-full {
       width: 100%;
@@ -472,7 +473,6 @@
           </form>
         </div>
         <p class="hero-note" style="margin-top: 12px;">Du bist angemeldet und kannst jetzt GPX-Dateien hochladen.</p>
-        <p class="support-url-note">Öffentliche Support-Seite: {{ support_public_url }}</p>
       </div>
 
       <div class="form-card">
@@ -493,7 +493,7 @@
               <span class="hero-note">Zuletzt importiert: {{ strava_imported_count }} neue Aktivitäten.</span>
             {% endif %}
             {% if strava_connected %}
-              <div class="action-stack">
+              <div class="action-stack-vertical">
                 <form action="{{ url_for('strava_import') }}" method="post">
                   <button class="strava" type="submit">Neue Strava-Aktivitäten laden</button>
                 </form>
