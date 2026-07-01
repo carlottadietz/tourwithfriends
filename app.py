@@ -180,7 +180,13 @@ def is_allowed_event_date(created_at_iso):
         activity_date = datetime.fromisoformat(created_at_iso).date()
     except ValueError:
         return False
-    return (activity_date.month, activity_date.day) >= EVENT_START_MONTH_DAY
+    current_time = app.config.get("CURRENT_TIME_OVERRIDE")
+    if current_time is None:
+        current_time = datetime.now()
+    current_date = current_time.date()
+    if (current_date.month, current_date.day) < EVENT_START_MONTH_DAY:
+        return False
+    return activity_date == current_date
 
 
 def get_strava_activity_created_at(activity):
@@ -319,7 +325,11 @@ def import_strava_activities_for_user(conn, user):
     if not access_token:
         return 0
 
-    event_start_date = f"{datetime.now().year:04d}-{EVENT_START_MONTH_DAY[0]:02d}-{EVENT_START_MONTH_DAY[1]:02d}"
+    current_time = app.config.get("CURRENT_TIME_OVERRIDE")
+    if current_time is None:
+        current_time = datetime.now()
+
+    event_start_date = f"{current_time.year:04d}-{EVENT_START_MONTH_DAY[0]:02d}-{EVENT_START_MONTH_DAY[1]:02d}"
     conn.execute(
         "DELETE FROM rides WHERE user_id = ? AND strava_activity_id IS NOT NULL AND date(created_at) < ?",
         (user["id"], event_start_date),
@@ -332,6 +342,7 @@ def import_strava_activities_for_user(conn, user):
     total_duration = 0.0
 
     headers = {"Authorization": f"Bearer {access_token}"}
+    today_start = datetime(current_time.year, current_time.month, current_time.day, tzinfo=timezone.utc)
     for page in range(1, 6):
         activities = get_json(
             f"{STRAVA_API_BASE}/athlete/activities",
@@ -339,7 +350,7 @@ def import_strava_activities_for_user(conn, user):
             query={
                 "per_page": 50,
                 "page": page,
-                "after": int(datetime(2026, EVENT_START_MONTH_DAY[0], EVENT_START_MONTH_DAY[1], tzinfo=timezone.utc).timestamp()),
+                "after": int(today_start.timestamp()),
             },
         )
         if not isinstance(activities, list) or not activities:

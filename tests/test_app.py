@@ -5,6 +5,7 @@ import unittest
 from io import BytesIO
 
 from unittest.mock import patch
+from datetime import datetime
 
 from app import app, get_db, import_strava_activities_for_user, init_db, parse_gpx_metrics
 
@@ -20,6 +21,7 @@ class TourWithFriendsTests(unittest.TestCase):
             SECRET_KEY="test-secret",
             DATABASE_PATH=self.db_path,
             UPLOAD_FOLDER=self.upload_dir,
+            CURRENT_TIME_OVERRIDE=None,
         )
 
         with app.app_context():
@@ -175,6 +177,7 @@ class TourWithFriendsTests(unittest.TestCase):
     @patch("app.get_valid_strava_token", return_value="token")
     @patch("app.get_json")
     def test_strava_import_uses_only_activities_from_04_07_onward(self, get_json_mock, _token_mock):
+        app.config["CURRENT_TIME_OVERRIDE"] = datetime(2026, 7, 4, 12, 0, 0)
         get_json_mock.side_effect = [
             [
                 {
@@ -219,6 +222,69 @@ class TourWithFriendsTests(unittest.TestCase):
         self.assertEqual(rides[0]["strava_activity_id"], "1002")
         self.assertTrue(rides[0]["created_at"].startswith("2026-07-04"))
         self.assertEqual(get_json_mock.call_args_list[0].kwargs["query"]["after"], 1783123200)
+
+    def test_upload_rejects_previous_day_activity(self):
+        app.config["CURRENT_TIME_OVERRIDE"] = datetime(2026, 7, 5, 10, 0, 0)
+        self.client.post(
+            "/login",
+            data={"name": "Anna", "gender": "Femme", "profile_image": (BytesIO(b"fake-image-data"), "avatar.png")},
+            content_type="multipart/form-data",
+            follow_redirects=True,
+        )
+
+        gpx_content = b"""<?xml version='1.0' encoding='UTF-8'?>
+        <gpx version='1.1' creator='test'>
+          <trk>
+            <trkseg>
+              <trkpt lat='48.8566' lon='2.3522'><ele>100</ele><time>2026-07-04T10:00:00Z</time></trkpt>
+              <trkpt lat='48.8576' lon='2.3532'><ele>120</ele><time>2026-07-04T10:10:00Z</time></trkpt>
+            </trkseg>
+          </trk>
+        </gpx>"""
+
+        response = self.client.post(
+            "/upload",
+            data={"gpx_file": (BytesIO(gpx_content), "ride_0407.gpx")},
+            content_type="multipart/form-data",
+            follow_redirects=True,
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertIn(b"Lade deine erste GPX-Datei hoch", response.data)
+
+        conn = sqlite3.connect(self.db_path)
+        ride_count = conn.execute("SELECT COUNT(*) FROM rides").fetchone()[0]
+        conn.close()
+        self.assertEqual(ride_count, 0)
+
+    def test_upload_accepts_same_day_activity(self):
+        app.config["CURRENT_TIME_OVERRIDE"] = datetime(2026, 7, 5, 10, 0, 0)
+        self.client.post(
+            "/login",
+            data={"name": "Anna", "gender": "Femme", "profile_image": (BytesIO(b"fake-image-data"), "avatar.png")},
+            content_type="multipart/form-data",
+            follow_redirects=True,
+        )
+
+        gpx_content = b"""<?xml version='1.0' encoding='UTF-8'?>
+        <gpx version='1.1' creator='test'>
+          <trk>
+            <trkseg>
+              <trkpt lat='48.8566' lon='2.3522'><ele>100</ele><time>2026-07-05T10:00:00Z</time></trkpt>
+              <trkpt lat='48.8576' lon='2.3532'><ele>120</ele><time>2026-07-05T10:10:00Z</time></trkpt>
+            </trkseg>
+          </trk>
+        </gpx>"""
+
+        response = self.client.post(
+            "/upload",
+            data={"gpx_file": (BytesIO(gpx_content), "ride_0507.gpx")},
+            content_type="multipart/form-data",
+            follow_redirects=True,
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertIn(b"ride_0507.gpx", response.data)
 
     @patch("app.get_valid_strava_token", return_value="token")
     @patch("app.get_json", return_value=[])

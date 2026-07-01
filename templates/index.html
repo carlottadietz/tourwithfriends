@@ -483,7 +483,7 @@
         <form action="{{ url_for('upload') }}" method="post" enctype="multipart/form-data">
           <label for="gpx_file">GPX-Datei</label>
           <input id="gpx_file" name="gpx_file" type="file" accept=".gpx" multiple required>
-          <div class="upload-hint"><span>Hinweis:</span> Alte Daten bleiben erhalten und werden dem aktuellen Profil hinzugefuegt. Aktivitäten vor dem 04.07 werden nicht angenommen.</div>
+          <div class="upload-hint"><span>Hinweis:</span> Alte Daten bleiben erhalten und werden dem aktuellen Profil hinzugefuegt. Aktivitäten müssen am selben Kalendertag bis 23:59 hochgeladen werden und können am Folgetag nicht mehr nachgereicht werden.</div>
           <button class="primary" type="submit">Upload starten</button>
         </form>
         {% if strava_enabled %}
