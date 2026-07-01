@@ -62,6 +62,61 @@ class TourWithFriendsTests(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertIn(b"Hallo, Anna", response.data)
 
+    def test_support_page_renders(self):
+        response = self.client.get("/support")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertIn(b"Support f\xc3\xbcr Tour with Friends", response.data)
+        self.assertIn(b"Gesammelte Support-Anfragen", response.data)
+
+    def test_support_form_creates_request(self):
+        response = self.client.post(
+            "/support",
+            data={
+                "name": "Lotti",
+                "email": "lotti@example.com",
+                "issue_type": "Bug",
+                "message": "Beim Strava Login kommt ein Fehler.",
+            },
+            follow_redirects=True,
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertIn(b"Support-Anfrage wurde gespeichert", response.data)
+        self.assertIn(b"Beim Strava Login kommt ein Fehler.", response.data)
+
+    def test_support_request_can_be_commented(self):
+        self.client.post(
+            "/support",
+            data={
+                "action": "create_request",
+                "name": "Lotti",
+                "email": "lotti@example.com",
+                "issue_type": "Bug",
+                "message": "Beim Strava Login kommt ein Fehler.",
+            },
+            follow_redirects=True,
+        )
+
+        conn = sqlite3.connect(self.db_path)
+        request_id = conn.execute("SELECT id FROM support_requests").fetchone()[0]
+        conn.close()
+
+        response = self.client.post(
+            "/support",
+            data={
+                "action": "add_comment",
+                "support_request_id": str(request_id),
+                "comment_name": "Carlotta",
+                "comment": "Ich schaue es mir an.",
+            },
+            follow_redirects=True,
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertIn(b"Kommentar wurde gespeichert", response.data)
+        self.assertIn(b"Ich schaue es mir an.", response.data)
+
     def test_parse_gpx_metrics_reads_distance_elevation_and_duration(self):
         gpx_content = """<?xml version='1.0' encoding='UTF-8'?>
         <gpx version='1.1' creator='test'>

@@ -205,6 +205,28 @@
     .delete-form { margin: 0; }
     .delete-form button { padding: 8px 12px; font-size: 0.88rem; }
     .muted { color: #64748b; }
+    .support-fab {
+      position: fixed;
+      right: 24px;
+      bottom: 24px;
+      z-index: 30;
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      text-decoration: none;
+      background: #0f172a;
+      color: #ffffff;
+      padding: 14px 18px;
+      border-radius: 999px;
+      box-shadow: 0 18px 40px rgba(15,23,42,0.28);
+      font-weight: 800;
+      letter-spacing: 0.02em;
+    }
+    .support-url-note {
+      margin-top: 12px;
+      color: #64748b;
+      font-size: 0.92rem;
+    }
 
     @media (max-width: 960px) {
       .layout-two, .top-three-cards, .stats-grid, .expand-grid, .layout-three { grid-template-columns: 1fr; }
@@ -246,6 +268,7 @@
           <p class="hero-note" style="margin: 10px 0 8px;">Oder direkt mit Strava anmelden:</p>
           <a class="button-link strava" href="{{ url_for('strava_login') }}">Mit Strava anmelden</a>
         {% endif %}
+        <p class="support-url-note">Support für Strava und Nutzeranfragen: {{ support_public_url }}</p>
       </div>
     </div>
   {% else %}
@@ -459,6 +482,7 @@
           <button class="primary" type="submit">Neues Profilbild speichern</button>
         </form>
         <p class="hero-note" style="margin-top: 12px;">Du bist angemeldet und kannst jetzt GPX-Dateien hochladen.</p>
+        <p class="support-url-note">Öffentliche Support-Seite: {{ support_public_url }}</p>
       </div>
 
       <div class="form-card">
@@ -575,6 +599,7 @@
     </div>
   </div>
   {% endif %}
+  <a class="support-fab" href="{{ url_for('support') }}">Support kontaktieren</a>
   <script>
     const existingUserSelect = document.getElementById('existing_user');
     const nameInput = document.getElementById('name');

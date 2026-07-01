@@ -21,6 +21,7 @@ app.config.update(
     STRAVA_CLIENT_ID=os.environ.get("STRAVA_CLIENT_ID", ""),
     STRAVA_CLIENT_SECRET=os.environ.get("STRAVA_CLIENT_SECRET", ""),
     STRAVA_REDIRECT_URI=os.environ.get("STRAVA_REDIRECT_URI", ""),
+    SUPPORT_PUBLIC_URL=os.environ.get("SUPPORT_PUBLIC_URL", ""),
     MAX_CONTENT_LENGTH=16 * 1024 * 1024,
     PERMANENT_SESSION_LIFETIME=timedelta(days=40),
 )
@@ -57,6 +58,30 @@ def init_db():
             duration_min REAL DEFAULT 0,
             created_at TEXT NOT NULL,
             FOREIGN KEY(user_id) REFERENCES users(id)
+        )
+        """
+    )
+    conn.execute(
+        """
+        CREATE TABLE IF NOT EXISTS support_requests (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT NOT NULL,
+            email TEXT NOT NULL,
+            issue_type TEXT NOT NULL,
+            message TEXT NOT NULL,
+            created_at TEXT NOT NULL
+        )
+        """
+    )
+    conn.execute(
+        """
+        CREATE TABLE IF NOT EXISTS support_comments (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            support_request_id INTEGER NOT NULL,
+            name TEXT NOT NULL,
+            comment TEXT NOT NULL,
+            created_at TEXT NOT NULL,
+            FOREIGN KEY(support_request_id) REFERENCES support_requests(id) ON DELETE CASCADE
         )
         """
     )
@@ -539,6 +564,7 @@ def index():
     strava_connected = bool(user and user["strava_refresh_token"])
     strava_enabled = bool(app.config["STRAVA_CLIENT_ID"] and app.config["STRAVA_CLIENT_SECRET"])
     strava_imported_count = session.pop("strava_imported_count", None)
+    support_public_url = app.config["SUPPORT_PUBLIC_URL"] or url_for("support", _external=True)
 
     return render_template(
         "index.html",
@@ -560,6 +586,122 @@ def index():
         strava_enabled=strava_enabled,
         strava_connected=strava_connected,
         strava_imported_count=strava_imported_count,
+        support_public_url=support_public_url,
+    )
+
+
+@app.route("/support", methods=["GET", "POST"])
+def support():
+    user = get_current_user()
+    status = request.args.get("status", "")
+    error = None
+    conn = get_db()
+    form_data = {
+        "name": user["name"] if user else "",
+        "email": "",
+        "issue_type": "Support",
+        "message": "",
+    }
+    comment_defaults = {
+        "name": user["name"] if user else "",
+    }
+
+    if request.method == "POST":
+        action = request.form.get("action", "create_request")
+        if action == "add_comment":
+            comment_name = request.form.get("comment_name", "").strip()
+            comment_text = request.form.get("comment", "").strip()
+            request_id_raw = request.form.get("support_request_id", "").strip()
+            try:
+                request_id = int(request_id_raw)
+            except ValueError:
+                request_id = 0
+
+            existing_request = conn.execute(
+                "SELECT id FROM support_requests WHERE id = ?",
+                (request_id,),
+            ).fetchone()
+
+            if not comment_name or not comment_text:
+                error = "Bitte gib einen Namen und einen Kommentar ein."
+            elif not existing_request:
+                error = "Die ausgewählte Support-Anfrage existiert nicht mehr."
+            else:
+                conn.execute(
+                    "INSERT INTO support_comments (support_request_id, name, comment, created_at) VALUES (?, ?, ?, ?)",
+                    (request_id, comment_name, comment_text, datetime.utcnow().isoformat()),
+                )
+                conn.commit()
+                return redirect(url_for("support", status="commented"))
+        else:
+            form_data = {
+                "name": request.form.get("name", "").strip(),
+                "email": request.form.get("email", "").strip(),
+                "issue_type": request.form.get("issue_type", "Support").strip() or "Support",
+                "message": request.form.get("message", "").strip(),
+            }
+
+            if not all(form_data.values()):
+                error = "Bitte fülle alle Felder aus."
+            elif "@" not in form_data["email"]:
+                error = "Bitte gib eine gültige E-Mail-Adresse an."
+            else:
+                conn.execute(
+                    "INSERT INTO support_requests (name, email, issue_type, message, created_at) VALUES (?, ?, ?, ?, ?)",
+                    (
+                        form_data["name"],
+                        form_data["email"],
+                        form_data["issue_type"],
+                        form_data["message"],
+                        datetime.utcnow().isoformat(),
+                    ),
+                )
+                conn.commit()
+                return redirect(url_for("support", status="created"))
+
+    support_requests = conn.execute(
+        """
+        SELECT
+            sr.id,
+            sr.name,
+            sr.email,
+            sr.issue_type,
+            sr.message,
+            strftime('%d.%m.%Y %H:%M', sr.created_at) AS created_at_label,
+            COUNT(sc.id) AS comment_count
+        FROM support_requests sr
+        LEFT JOIN support_comments sc ON sc.support_request_id = sr.id
+        GROUP BY sr.id
+        ORDER BY sr.created_at DESC, sr.id DESC
+        """
+    ).fetchall()
+    comments = conn.execute(
+        """
+        SELECT
+            id,
+            support_request_id,
+            name,
+            comment,
+            strftime('%d.%m.%Y %H:%M', created_at) AS created_at_label
+        FROM support_comments
+        ORDER BY created_at ASC, id ASC
+        """
+    ).fetchall()
+    comments_by_request = {}
+    for comment in comments:
+        comments_by_request.setdefault(comment["support_request_id"], []).append(comment)
+
+    support_public_url = app.config["SUPPORT_PUBLIC_URL"] or url_for("support", _external=True)
+    return render_template(
+        "support.html",
+        user=user,
+        error=error,
+        status=status,
+        form_data=form_data,
+        comment_defaults=comment_defaults,
+        support_requests=support_requests,
+        comments_by_request=comments_by_request,
+        support_public_url=support_public_url,
     )
 
 
