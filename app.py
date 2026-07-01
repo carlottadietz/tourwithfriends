@@ -968,6 +968,29 @@ def strava_import():
     return redirect(url_for("index"))
 
 
+@app.route("/strava/disconnect", methods=["POST"])
+def strava_disconnect():
+    user = get_current_user()
+    if not user:
+        return redirect(url_for("index"))
+
+    conn = get_db()
+    conn.execute(
+        """
+        UPDATE users
+        SET strava_athlete_id = NULL,
+            strava_access_token = NULL,
+            strava_refresh_token = NULL,
+            strava_token_expires_at = 0
+        WHERE id = ?
+        """,
+        (user["id"],),
+    )
+    conn.commit()
+    session.pop("strava_imported_count", None)
+    return redirect(url_for("index"))
+
+
 @app.route("/profile-image", methods=["POST"])
 def update_profile_image():
     user = get_current_user()

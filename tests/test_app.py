@@ -64,6 +64,59 @@ class TourWithFriendsTests(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertIn(b"Hallo, Anna", response.data)
 
+    def test_logged_in_user_can_log_out_to_login_screen(self):
+        self.client.post(
+            "/login",
+            data={"name": "Anna", "gender": "Femme", "profile_image": (BytesIO(b"fake-image-data"), "avatar.png")},
+            content_type="multipart/form-data",
+            follow_redirects=True,
+        )
+
+        response = self.client.post("/logout", follow_redirects=True)
+
+        self.assertEqual(response.status_code, 200)
+        self.assertIn(b"Bitte zuerst anmelden", response.data)
+
+    def test_user_can_disconnect_strava_connection(self):
+        app.config.update(
+            STRAVA_CLIENT_ID="client-id",
+            STRAVA_CLIENT_SECRET="client-secret",
+        )
+        self.client.post(
+            "/login",
+            data={"name": "Anna", "gender": "Femme", "profile_image": (BytesIO(b"fake-image-data"), "avatar.png")},
+            content_type="multipart/form-data",
+            follow_redirects=True,
+        )
+
+        with self.client.session_transaction() as session_data:
+            user_id = session_data["user_id"]
+
+        conn = sqlite3.connect(self.db_path)
+        conn.execute(
+            "UPDATE users SET strava_athlete_id = ?, strava_access_token = ?, strava_refresh_token = ?, strava_token_expires_at = ? WHERE id = ?",
+            ("12345", "access-token", "refresh-token", 9999999999, user_id),
+        )
+        conn.commit()
+        conn.close()
+
+        response = self.client.post("/strava/disconnect", follow_redirects=True)
+
+        self.assertEqual(response.status_code, 200)
+        self.assertIn(b"Strava verbinden", response.data)
+
+        conn = sqlite3.connect(self.db_path)
+        row = conn.execute(
+            "SELECT strava_athlete_id, strava_access_token, strava_refresh_token, strava_token_expires_at FROM users WHERE id = ?",
+            (user_id,),
+        ).fetchone()
+        conn.close()
+
+        self.assertIsNone(row[0])
+        self.assertIsNone(row[1])
+        self.assertIsNone(row[2])
+        self.assertEqual(row[3], 0)
+
     def test_support_page_renders(self):
         response = self.client.get("/support")
 

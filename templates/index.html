@@ -144,6 +144,7 @@
     .profile-update-form { margin-top: 14px; display: grid; gap: 8px; }
     .profile-update-form input { padding: 10px 12px; }
     .profile-update-form button { width: fit-content; }
+    .action-stack { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 14px; }
 
     .trikot-full {
       width: 100%;
@@ -464,6 +465,11 @@
           <input id="new_profile_image" name="profile_image" type="file" accept="image/*" required>
           <button class="primary" type="submit">Neues Profilbild speichern</button>
         </form>
+        <div class="action-stack">
+          <form action="{{ url_for('logout') }}" method="post">
+            <button class="secondary" type="submit">Vom Profil abmelden</button>
+          </form>
+        </div>
         <p class="hero-note" style="margin-top: 12px;">Du bist angemeldet und kannst jetzt GPX-Dateien hochladen.</p>
         <p class="support-url-note">Öffentliche Support-Seite: {{ support_public_url }}</p>
       </div>
@@ -486,9 +492,14 @@
               <span class="hero-note">Zuletzt importiert: {{ strava_imported_count }} neue Aktivitäten.</span>
             {% endif %}
             {% if strava_connected %}
-              <form action="{{ url_for('strava_import') }}" method="post">
-                <button class="strava" type="submit">Neue Strava-Aktivitäten laden</button>
-              </form>
+              <div class="action-stack">
+                <form action="{{ url_for('strava_import') }}" method="post">
+                  <button class="strava" type="submit">Neue Strava-Aktivitäten laden</button>
+                </form>
+                <form action="{{ url_for('strava_disconnect') }}" method="post">
+                  <button class="danger" type="submit">Strava-Verbindung löschen</button>
+                </form>
+              </div>
             {% else %}
               <span class="hero-note">Noch nicht verbunden.</span>
               <a class="button-link strava" href="{{ url_for('strava_login') }}">Strava verbinden</a>
