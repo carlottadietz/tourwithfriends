@@ -109,7 +109,7 @@
     form { display: grid; gap: 14px; }
     input:not([type="radio"]):not([type="file"]), select { width: 100%; border-radius: 14px; border: 1px solid rgba(148,163,184,0.35); background: #f8fafc; color: #1f2937; padding: 14px 16px; }
     input:not([type="radio"]):not([type="file"])::placeholder, select { color: #64748b; }
-    select { appearance: none; -webkit-appearance: none; background-image: linear-gradient(45deg, transparent 50%, #92400e 50%), linear-gradient(135deg, #92400e 50%, transparent 50%), linear-gradient(180deg, rgba(255,255,255,0), rgba(255,255,255,0)); background-position: calc(100% - 22px) calc(50% - 3px), calc(100% - 16px) calc(50% - 3px), 100% 0; background-size: 6px 6px, 6px 6px, 2.5rem 100%; background-repeat: no-repeat; padding-right: 48px; }
+    select { appearance: none; -webkit-appearance: none; background-image: linear-gradient(45deg, transparent 50%, #0f172a 50%), linear-gradient(135deg, #0f172a 50%, transparent 50%), linear-gradient(180deg, rgba(255,255,255,0), rgba(255,255,255,0)); background-position: calc(100% - 22px) calc(50% - 3px), calc(100% - 16px) calc(50% - 3px), 100% 0; background-size: 6px 6px, 6px 6px, 2.5rem 100%; background-repeat: no-repeat; padding-right: 48px; }
     select:focus, input[type="file"]:focus { outline: none; border-color: rgba(234,179,8,0.75); box-shadow: 0 0 0 4px rgba(250,204,21,0.2); }
     input[type="file"] {
       width: 100%;
@@ -168,7 +168,7 @@
       pointer-events: none;
     }
     .profile-card > * { position: relative; }
-    .profile-card .badge { background: rgba(255,255,255,0.82); border-color: rgba(202,138,4,0.22); color: #92400e; }
+    .profile-card .badge { background: rgba(255,255,255,0.82); border-color: rgba(202,138,4,0.22); color: #0f172a; }
     .profile-card .user-pill {
       background: rgba(255,255,255,0.76);
       border-color: rgba(202,138,4,0.18);
@@ -182,7 +182,7 @@
       padding: 16px;
       box-shadow: inset 0 1px 0 rgba(255,255,255,0.62);
     }
-    .profile-card .profile-update-form label { font-weight: 700; color: #78350f; }
+    .profile-card .profile-update-form label { font-weight: 700; color: #0f172a; }
     .profile-card select,
     .profile-card input[type="file"] {
       background-color: rgba(255,255,255,0.9);
@@ -193,8 +193,8 @@
       border-radius: 16px;
       min-height: 54px;
       font-weight: 700;
-      color: #7c5a10;
-      background-image: linear-gradient(45deg, transparent 50%, #a16207 50%), linear-gradient(135deg, #a16207 50%, transparent 50%), linear-gradient(180deg, rgba(255,244,184,0.85), rgba(255,255,255,0));
+      color: #0f172a;
+      background-image: linear-gradient(45deg, transparent 50%, #0f172a 50%), linear-gradient(135deg, #0f172a 50%, transparent 50%), linear-gradient(180deg, rgba(255,244,184,0.85), rgba(255,255,255,0));
       background-position: calc(100% - 22px) calc(50% - 3px), calc(100% - 16px) calc(50% - 3px), 100% 0;
       background-size: 6px 6px, 6px 6px, 3.2rem 100%;
     }
@@ -208,7 +208,7 @@
       padding: 10px 16px;
       margin-right: 12px;
       background: linear-gradient(180deg, #fffef7 0%, #fff4bf 100%);
-      color: #7c5a10;
+      color: #0f172a;
       font-weight: 700;
       box-shadow: 0 4px 10px rgba(234,179,8,0.12);
     }
@@ -220,7 +220,7 @@
     .profile-card .secondary {
       background: rgba(255,255,255,0.78);
       border: 1px solid rgba(202,138,4,0.18);
-      color: #78350f;
+      color: #0f172a;
     }
 
     .trikot-full {
@@ -357,7 +357,7 @@
         <span class="label-small">04.07 - 26.07</span>
         <div class="headline-text">
           <h1>tour with friends goes Tour de France </h1>
-          <p class="hero-note">Lade deine Aktivitäten als GPX-Datei hoch und sammle jeden Tag Punkte in der Trikotwertung. Alle Teilnehmer erhalten ein Goodie und die Spitzenfahrer sichern sich den Hauptgewinn.</p>
+          <p class="hero-note">Diese Seite ist unser gemeinsames Tour-de-France-Spiel für Freunde: Du lädst deine Radaktivitäten hoch, sammelst Kilometer, Höhenmeter, Fahrzeit und Tempo und tauchst damit automatisch in den verschiedenen Wertungen auf. So sieht jede Person sofort, wer gerade welches Trikot anführt.</p>
         </div>
       </div>
       <div class="stage-hero">
@@ -411,7 +411,7 @@
         <div class="top-three-cards">
           <article class="trikot-card trikot-yellow">
             <h3>Gelbes Trikot</h3>
-            <p>Wer über alle hochgeladenen Fahrten die höchste durchschnittliche km/h erreicht.</p>
+            <p>Dieses Trikot geht an die Person, die über alle hochgeladenen Fahrten den höchsten Durchschnitt in km/h erreicht.</p>
             <ol class="top-three">
               {% for entry in yellow_leaderboard[:3] %}
                 <li>
@@ -426,7 +426,7 @@
 
           <article class="trikot-card trikot-white">
             <h3>Weißes Trikot</h3>
-            <p>Wer die meisten Kilometer insgesamt gesammelt hat.</p>
+            <p>Dieses Trikot geht an die Person, die über alle hochgeladenen Fahrten die meisten Kilometer gesammelt hat.</p>
             <ol class="top-three">
               {% for entry in white_leaderboard[:3] %}
                 <li>
@@ -441,7 +441,7 @@
 
           <article class="trikot-card trikot-polka">
             <h3>Punkte Trikot</h3>
-            <p>Wer die meisten Höhenmeter bisher gesammelt hat.</p>
+            <p>Dieses Trikot geht an die Person, die über alle hochgeladenen Fahrten die meisten Höhenmeter gesammelt hat.</p>
             <ol class="top-three">
               {% for entry in elevation_leaderboard[:3] %}
                 <li>
@@ -456,7 +456,7 @@
 
           <article class="trikot-card trikot-green">
             <h3>Grünes Trikot</h3>
-            <p>Wer die meisten Minuten bisher im Sattel verbracht hat.</p>
+            <p>Dieses Trikot geht an die Person, die über alle hochgeladenen Fahrten die meiste Fahrzeit gesammelt hat.</p>
             <ol class="top-three">
               {% for entry in duration_leaderboard[:3] %}
                 <li>
