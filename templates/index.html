@@ -343,10 +343,6 @@
           <input id="profile_image" name="profile_image" type="file" accept="image/*" required>
           <button id="login-submit" class="primary" type="submit">Anmelden und starten</button>
         </form>
-        {% if strava_enabled %}
-          <p class="hero-note" style="margin: 10px 0 8px;">Oder direkt mit Strava anmelden:</p>
-          <a class="button-link strava" href="{{ url_for('strava_login') }}">Mit Strava anmelden</a>
-        {% endif %}
         <p class="support-url-note">Support für Strava und Nutzeranfragen: {{ support_public_url }}</p>
       </div>
     </div>
