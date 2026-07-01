@@ -131,6 +131,7 @@
     }
     button { border-radius: 12px; border: none; padding: 11px 14px; font-weight: 700; cursor: pointer; transition: transform 120ms ease, background 120ms ease; }
     button:hover { transform: translateY(-1px); }
+    button:disabled { background: #cbd5e1; color: #64748b; cursor: not-allowed; transform: none; }
     .button-link { display: inline-flex; align-items: center; justify-content: center; text-decoration: none; border-radius: 12px; padding: 11px 14px; font-weight: 700; transition: transform 120ms ease, background 120ms ease; }
     .button-link:hover { transform: translateY(-1px); }
     .primary { background: #facc15; color: #0f172a; }
@@ -483,8 +484,8 @@
         <form action="{{ url_for('upload') }}" method="post" enctype="multipart/form-data">
           <label for="gpx_file">GPX-Datei</label>
           <input id="gpx_file" name="gpx_file" type="file" accept=".gpx" multiple required>
-          <div class="upload-hint"><span>Hinweis:</span> Alte Daten bleiben erhalten und werden dem aktuellen Profil hinzugefuegt. Aktivitäten müssen am selben Kalendertag bis 23:59 hochgeladen werden und können am Folgetag nicht mehr nachgereicht werden.</div>
-          <button class="primary" type="submit">Upload starten</button>
+          <div class="upload-hint"><span>Hinweis:</span> Alte Daten bleiben erhalten und werden dem aktuellen Profil hinzugefuegt. Aktivitäten müssen am selben Kalendertag bis 23:59 hochgeladen werden und können am Folgetag nicht mehr nachgereicht werden. Der Upload-Button wird erst aktiv, sobald mindestens eine GPX-Datei ausgewählt wurde.</div>
+          <button id="upload-submit" class="primary" type="submit" disabled>Upload starten</button>
         </form>
         {% if strava_enabled %}
           <div style="margin-top: 14px; display: grid; gap: 8px;">
@@ -608,6 +609,8 @@
     const profileImageInput = document.getElementById('profile_image');
     const loginSubmit = document.getElementById('login-submit');
     const genderInputs = document.querySelectorAll('input[name="gender"]');
+    const gpxFileInput = document.getElementById('gpx_file');
+    const uploadSubmit = document.getElementById('upload-submit');
 
     if (existingUserSelect && nameInput && profileImageInput && loginSubmit && genderInputs.length) {
       const defaultLabel = 'Anmelden und starten';
@@ -639,6 +642,15 @@
 
       existingUserSelect.addEventListener('change', syncLoginLabel);
       syncLoginLabel();
+    }
+
+    if (gpxFileInput && uploadSubmit) {
+      const syncUploadState = () => {
+        uploadSubmit.disabled = gpxFileInput.files.length === 0;
+      };
+
+      gpxFileInput.addEventListener('change', syncUploadState);
+      syncUploadState();
     }
   </script>
 </body>
