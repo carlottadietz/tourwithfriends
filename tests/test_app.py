@@ -420,7 +420,7 @@ class TourWithFriendsTests(unittest.TestCase):
         ).fetchone()
         marker = conn.execute(
             "SELECT value FROM app_settings WHERE key = ?",
-            ("gpx_metrics_recalculated_v1",),
+            ("gpx_metrics_recalculated_v2",),
         ).fetchone()
         conn.close()
 
@@ -451,7 +451,7 @@ class TourWithFriendsTests(unittest.TestCase):
 
         metrics = parse_gpx_metrics(path)
         self.assertTrue(metrics["distance_km"] > 0)
-        self.assertEqual(metrics["elevation_m"], 5.0)
+        self.assertEqual(metrics["elevation_m"], 0.0)
 
     def test_user_can_delete_own_ride(self):
         self.client.post(

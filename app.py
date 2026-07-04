@@ -29,7 +29,7 @@ app.config.update(
 STRAVA_AUTH_URL = "https://www.strava.com/oauth/authorize"
 STRAVA_TOKEN_URL = "https://www.strava.com/oauth/token"
 STRAVA_API_BASE = "https://www.strava.com/api/v3"
-GPX_RECALC_MIGRATION_KEY = "gpx_metrics_recalculated_v1"
+GPX_RECALC_MIGRATION_KEY = "gpx_metrics_recalculated_v2"
 
 
 def init_db():
@@ -160,8 +160,10 @@ def haversine(lat1, lon1, lat2, lon2):
 
 
 PAUSE_THRESHOLD_SECONDS = 1800
-ELEVATION_HYSTERESIS_M = 4.5
-MIN_ACTIVE_SPEED_KMH = 0.1
+ELEVATION_HYSTERESIS_M = 15.0
+CADENCE_ZERO_STOP_SPEED_KMH = 22.0
+STATIONARY_DISTANCE_EPSILON_KM = 0.005
+STATIONARY_SPEED_KMH = 0.5
 EVENT_START_MONTH_DAY = (7, 4)
 VALID_GENDERS = ("Femme", "Homme")
 
@@ -432,6 +434,7 @@ def parse_gpx_metrics(path):
             lon = float(element.attrib.get("lon", "0"))
             ele = None
             time_text = None
+            cadence_rpm = None
             for child in element:
                 if child.tag.endswith("ele"):
                     try:
@@ -440,7 +443,14 @@ def parse_gpx_metrics(path):
                         ele = None
                 elif child.tag.endswith("time"):
                     time_text = child.text
-            points.append({"lat": lat, "lon": lon, "ele": ele, "time": time_text})
+                elif child.tag.endswith("extensions"):
+                    for extension_child in child.iter():
+                        if extension_child.tag.endswith("cad"):
+                            try:
+                                cadence_rpm = float(extension_child.text)
+                            except (TypeError, ValueError):
+                                cadence_rpm = None
+            points.append({"lat": lat, "lon": lon, "ele": ele, "time": time_text, "cadence_rpm": cadence_rpm})
 
     if len(points) < 2:
         return {"distance_km": 0.0, "elevation_m": 0.0, "duration_min": 0.0, "created_at": None}
@@ -472,7 +482,24 @@ def parse_gpx_metrics(path):
                     delta = (cur_time - prev_time).total_seconds()
                     if delta > 0 and delta <= PAUSE_THRESHOLD_SECONDS:
                         segment_speed_kmh = segment_distance_km / (delta / 3600.0)
-                        if segment_speed_kmh >= MIN_ACTIVE_SPEED_KMH:
+                        include_active_seconds = True
+                        has_cadence_for_segment = (
+                            previous["cadence_rpm"] is not None and point["cadence_rpm"] is not None
+                        )
+                        if has_cadence_for_segment:
+                            if (
+                                previous["cadence_rpm"] <= 0
+                                and point["cadence_rpm"] <= 0
+                                and segment_speed_kmh < CADENCE_ZERO_STOP_SPEED_KMH
+                            ):
+                                include_active_seconds = False
+                        elif (
+                            segment_distance_km <= STATIONARY_DISTANCE_EPSILON_KM
+                            and segment_speed_kmh <= STATIONARY_SPEED_KMH
+                        ):
+                            include_active_seconds = False
+
+                        if include_active_seconds:
                             total_active_seconds += delta
 
         if point["time"] and start_time is None:
