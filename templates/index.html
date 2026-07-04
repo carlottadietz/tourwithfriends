@@ -136,6 +136,7 @@
     button:disabled { background: #cbd5e1; color: #64748b; cursor: not-allowed; transform: none; }
     .button-link { display: inline-flex; align-items: center; justify-content: center; text-decoration: none; border-radius: 12px; padding: 11px 14px; font-weight: 700; transition: transform 120ms ease, background 120ms ease; }
     .button-link:hover { transform: translateY(-1px); }
+    .button-link.disabled { background: #cbd5e1; color: #64748b; cursor: not-allowed; pointer-events: none; transform: none; }
     .primary { background: #facc15; color: #0f172a; }
     .danger { background: #ef4444; color: #ffffff; }
     .strava { background: #fc4c02; color: #ffffff; }
@@ -565,7 +566,7 @@
             {% if strava_connected %}
               <div class="action-stack-vertical">
                 <form action="{{ url_for('strava_import') }}" method="post">
-                  <button class="strava" type="submit">Neue Strava-Aktivitäten laden</button>
+                  <button class="strava" type="submit" disabled title="Strava API aktuell noch nicht fuer alle freigeschaltet">Neue Strava-Aktivitäten laden</button>
                 </form>
                 <form action="{{ url_for('strava_disconnect') }}" method="post">
                   <button class="danger" type="submit">Strava-Verbindung löschen</button>
@@ -573,7 +574,7 @@
               </div>
             {% else %}
               <span class="hero-note">Noch nicht verbunden.</span>
-              <a class="button-link strava" href="{{ url_for('strava_login') }}">Strava verbinden</a>
+              <span class="button-link strava disabled" aria-disabled="true" title="Strava API aktuell noch nicht fuer alle freigeschaltet">Strava verbinden</span>
             {% endif %}
           </div>
         {% endif %}

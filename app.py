@@ -29,6 +29,7 @@ app.config.update(
 STRAVA_AUTH_URL = "https://www.strava.com/oauth/authorize"
 STRAVA_TOKEN_URL = "https://www.strava.com/oauth/token"
 STRAVA_API_BASE = "https://www.strava.com/api/v3"
+GPX_RECALC_MIGRATION_KEY = "gpx_metrics_recalculated_v1"
 
 
 def init_db():
@@ -82,6 +83,14 @@ def init_db():
             comment TEXT NOT NULL,
             created_at TEXT NOT NULL,
             FOREIGN KEY(support_request_id) REFERENCES support_requests(id) ON DELETE CASCADE
+        )
+        """
+    )
+    conn.execute(
+        """
+        CREATE TABLE IF NOT EXISTS app_settings (
+            key TEXT PRIMARY KEY,
+            value TEXT
         )
         """
     )
@@ -152,6 +161,7 @@ def haversine(lat1, lon1, lat2, lon2):
 
 PAUSE_THRESHOLD_SECONDS = 1800
 ELEVATION_HYSTERESIS_M = 4.5
+MIN_ACTIVE_SPEED_KMH = 0.1
 EVENT_START_MONTH_DAY = (7, 4)
 VALID_GENDERS = ("Femme", "Homme")
 
@@ -445,7 +455,8 @@ def parse_gpx_metrics(path):
             elevation_samples.append(point["ele"])
 
         if previous is not None:
-            total_distance += haversine(previous["lat"], previous["lon"], point["lat"], point["lon"])
+            segment_distance_km = haversine(previous["lat"], previous["lon"], point["lat"], point["lon"])
+            total_distance += segment_distance_km
 
             if previous["time"] and point["time"]:
                 try:
@@ -460,7 +471,9 @@ def parse_gpx_metrics(path):
                         cur_time = cur_time.astimezone(timezone.utc).replace(tzinfo=None)
                     delta = (cur_time - prev_time).total_seconds()
                     if delta > 0 and delta <= PAUSE_THRESHOLD_SECONDS:
-                        total_active_seconds += delta
+                        segment_speed_kmh = segment_distance_km / (delta / 3600.0)
+                        if segment_speed_kmh >= MIN_ACTIVE_SPEED_KMH:
+                            total_active_seconds += delta
 
         if point["time"] and start_time is None:
             try:
@@ -484,6 +497,76 @@ def parse_gpx_metrics(path):
         "duration_min": duration_minutes,
         "created_at": created_at,
     }
+
+
+def run_gpx_recalculation_migration():
+    conn = sqlite3.connect(app.config["DATABASE_PATH"])
+    conn.row_factory = sqlite3.Row
+    try:
+        applied = conn.execute(
+            "SELECT value FROM app_settings WHERE key = ?",
+            (GPX_RECALC_MIGRATION_KEY,),
+        ).fetchone()
+        if applied:
+            return 0
+
+        rides = conn.execute(
+            "SELECT id, filename FROM rides WHERE strava_activity_id IS NULL"
+        ).fetchall()
+        updated_count = 0
+
+        for ride in rides:
+            filename = (ride["filename"] or "").strip()
+            if not filename:
+                continue
+            gpx_path = os.path.join(app.config["UPLOAD_FOLDER"], filename)
+            if not os.path.exists(gpx_path):
+                continue
+
+            try:
+                metrics = parse_gpx_metrics(gpx_path)
+            except Exception:
+                continue
+
+            created_at = metrics["created_at"]
+            if created_at:
+                conn.execute(
+                    "UPDATE rides SET distance_km = ?, elevation_m = ?, duration_min = ?, created_at = ? WHERE id = ?",
+                    (
+                        metrics["distance_km"],
+                        metrics["elevation_m"],
+                        metrics["duration_min"],
+                        created_at,
+                        ride["id"],
+                    ),
+                )
+            else:
+                conn.execute(
+                    "UPDATE rides SET distance_km = ?, elevation_m = ?, duration_min = ? WHERE id = ?",
+                    (
+                        metrics["distance_km"],
+                        metrics["elevation_m"],
+                        metrics["duration_min"],
+                        ride["id"],
+                    ),
+                )
+            updated_count += 1
+
+        user_ids = conn.execute("SELECT id FROM users").fetchall()
+        for row in user_ids:
+            recalculate_user_totals(conn, row["id"])
+
+        conn.execute(
+            "INSERT INTO app_settings (key, value) VALUES (?, ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value",
+            (GPX_RECALC_MIGRATION_KEY, datetime.now(timezone.utc).isoformat()),
+        )
+        conn.commit()
+        return updated_count
+    finally:
+        conn.close()
+
+
+run_gpx_recalculation_migration()
 
 
 @app.route("/")

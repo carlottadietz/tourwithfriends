@@ -7,7 +7,7 @@ from io import BytesIO
 from unittest.mock import patch
 from datetime import datetime
 
-from app import app, get_db, import_strava_activities_for_user, init_db, parse_gpx_metrics
+from app import app, get_db, import_strava_activities_for_user, init_db, parse_gpx_metrics, run_gpx_recalculation_migration
 
 
 class TourWithFriendsTests(unittest.TestCase):
@@ -357,24 +357,101 @@ class TourWithFriendsTests(unittest.TestCase):
         self.assertAlmostEqual(metrics["duration_min"], 2.0, places=1)
         self.assertTrue(metrics["created_at"].startswith("2026-07-04T10:00:00"))
 
-        def test_parse_gpx_metrics_ignores_missing_elevation_points(self):
-                gpx_content = """<?xml version='1.0' encoding='UTF-8'?>
-                <gpx version='1.1' creator='test'>
-                    <trk>
-                        <trkseg>
-                            <trkpt lat='48.8566' lon='2.3522'><ele>100</ele><time>2026-07-04T10:00:00Z</time></trkpt>
-                            <trkpt lat='48.8570' lon='2.3528'><time>2026-07-04T10:03:00Z</time></trkpt>
-                            <trkpt lat='48.8576' lon='2.3532'><ele>105</ele><time>2026-07-04T10:06:00Z</time></trkpt>
-                        </trkseg>
-                    </trk>
-                </gpx>"""
-                path = os.path.join(self.tmp_dir.name, "ride_missing_ele.gpx")
-                with open(path, "w", encoding="utf-8") as handle:
-                        handle.write(gpx_content)
+    def test_parse_gpx_metrics_excludes_stationary_stop_time(self):
+        gpx_content = """<?xml version='1.0' encoding='UTF-8'?>
+        <gpx version='1.1' creator='test'>
+          <trk>
+            <trkseg>
+              <trkpt lat='48.8566' lon='2.3522'><ele>100</ele><time>2026-07-04T10:00:00Z</time></trkpt>
+              <trkpt lat='48.8566' lon='2.3522'><ele>100</ele><time>2026-07-04T10:10:00Z</time></trkpt>
+              <trkpt lat='48.8576' lon='2.3532'><ele>120</ele><time>2026-07-04T10:20:00Z</time></trkpt>
+            </trkseg>
+          </trk>
+        </gpx>"""
+        path = os.path.join(self.tmp_dir.name, "ride_stationary_pause.gpx")
+        with open(path, "w", encoding="utf-8") as handle:
+            handle.write(gpx_content)
 
-                metrics = parse_gpx_metrics(path)
-                self.assertTrue(metrics["distance_km"] > 0)
-                self.assertEqual(metrics["elevation_m"], 0.0)
+        metrics = parse_gpx_metrics(path)
+        self.assertTrue(metrics["distance_km"] > 0)
+        self.assertAlmostEqual(metrics["duration_min"], 10.0, places=1)
+
+    def test_gpx_recalculation_migration_updates_existing_uploaded_rides(self):
+        os.makedirs(self.upload_dir, exist_ok=True)
+        gpx_name = "legacy_ride.gpx"
+        gpx_path = os.path.join(self.upload_dir, gpx_name)
+        gpx_content = """<?xml version='1.0' encoding='UTF-8'?>
+        <gpx version='1.1' creator='test'>
+          <trk>
+            <trkseg>
+              <trkpt lat='48.8566' lon='2.3522'><ele>100</ele><time>2026-07-04T10:00:00Z</time></trkpt>
+              <trkpt lat='48.8566' lon='2.3522'><ele>100</ele><time>2026-07-04T10:10:00Z</time></trkpt>
+              <trkpt lat='48.8576' lon='2.3532'><ele>120</ele><time>2026-07-04T10:20:00Z</time></trkpt>
+            </trkseg>
+          </trk>
+        </gpx>"""
+        with open(gpx_path, "w", encoding="utf-8") as handle:
+            handle.write(gpx_content)
+
+        conn = sqlite3.connect(self.db_path)
+        user_id = conn.execute(
+            "INSERT INTO users (name, gender, profile_image, total_distance_km, total_elevation_m, total_duration_min) VALUES (?, ?, ?, ?, ?, ?)",
+            ("Legacy User", "Homme", "avatar.png", 50.0, 500.0, 90.0),
+        ).lastrowid
+        ride_id = conn.execute(
+            "INSERT INTO rides (user_id, filename, distance_km, elevation_m, duration_min, created_at) VALUES (?, ?, ?, ?, ?, ?)",
+            (user_id, gpx_name, 50.0, 500.0, 90.0, "2026-07-04T10:00:00"),
+        ).lastrowid
+        conn.commit()
+        conn.close()
+
+        updated_count = run_gpx_recalculation_migration()
+        updated_count_second = run_gpx_recalculation_migration()
+
+        conn = sqlite3.connect(self.db_path)
+        conn.row_factory = sqlite3.Row
+        ride = conn.execute(
+            "SELECT distance_km, elevation_m, duration_min FROM rides WHERE id = ?",
+            (ride_id,),
+        ).fetchone()
+        user = conn.execute(
+            "SELECT total_distance_km, total_elevation_m, total_duration_min FROM users WHERE id = ?",
+            (user_id,),
+        ).fetchone()
+        marker = conn.execute(
+            "SELECT value FROM app_settings WHERE key = ?",
+            ("gpx_metrics_recalculated_v1",),
+        ).fetchone()
+        conn.close()
+
+        self.assertEqual(updated_count, 1)
+        self.assertEqual(updated_count_second, 0)
+        self.assertTrue(ride["distance_km"] > 0)
+        self.assertAlmostEqual(ride["elevation_m"], 20.0, places=2)
+        self.assertAlmostEqual(ride["duration_min"], 10.0, places=1)
+        self.assertAlmostEqual(user["total_distance_km"], ride["distance_km"], places=2)
+        self.assertAlmostEqual(user["total_elevation_m"], ride["elevation_m"], places=2)
+        self.assertAlmostEqual(user["total_duration_min"], ride["duration_min"], places=2)
+        self.assertIsNotNone(marker)
+
+    def test_parse_gpx_metrics_ignores_missing_elevation_points(self):
+        gpx_content = """<?xml version='1.0' encoding='UTF-8'?>
+        <gpx version='1.1' creator='test'>
+            <trk>
+                <trkseg>
+                    <trkpt lat='48.8566' lon='2.3522'><ele>100</ele><time>2026-07-04T10:00:00Z</time></trkpt>
+                    <trkpt lat='48.8570' lon='2.3528'><time>2026-07-04T10:03:00Z</time></trkpt>
+                    <trkpt lat='48.8576' lon='2.3532'><ele>105</ele><time>2026-07-04T10:06:00Z</time></trkpt>
+                </trkseg>
+            </trk>
+        </gpx>"""
+        path = os.path.join(self.tmp_dir.name, "ride_missing_ele.gpx")
+        with open(path, "w", encoding="utf-8") as handle:
+            handle.write(gpx_content)
+
+        metrics = parse_gpx_metrics(path)
+        self.assertTrue(metrics["distance_km"] > 0)
+        self.assertEqual(metrics["elevation_m"], 5.0)
 
     def test_user_can_delete_own_ride(self):
         self.client.post(
