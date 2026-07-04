@@ -286,6 +286,42 @@ class TourWithFriendsTests(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertIn(b"ride_0507.gpx", response.data)
 
+    @patch("app.parse_fit_metrics")
+    def test_upload_accepts_same_day_fit_activity(self, parse_fit_metrics_mock):
+        app.config["CURRENT_TIME_OVERRIDE"] = datetime(2026, 7, 5, 10, 0, 0)
+        parse_fit_metrics_mock.return_value = {
+            "distance_km": 25.5,
+            "elevation_m": 117.0,
+            "duration_min": 67.0,
+            "created_at": "2026-07-05T09:00:00",
+        }
+
+        self.client.post(
+            "/login",
+            data={"name": "Anna", "gender": "Femme", "profile_image": (BytesIO(b"fake-image-data"), "avatar.png")},
+            content_type="multipart/form-data",
+            follow_redirects=True,
+        )
+
+        response = self.client.post(
+            "/upload",
+            data={"gpx_file": (BytesIO(b"fit-binary"), "ride.fit")},
+            content_type="multipart/form-data",
+            follow_redirects=True,
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertIn(b"ride.fit", response.data)
+
+        conn = sqlite3.connect(self.db_path)
+        row = conn.execute(
+            "SELECT distance_km, elevation_m, duration_min FROM rides ORDER BY id DESC LIMIT 1"
+        ).fetchone()
+        conn.close()
+        self.assertAlmostEqual(row[0], 25.5, places=2)
+        self.assertAlmostEqual(row[1], 117.0, places=2)
+        self.assertAlmostEqual(row[2], 67.0, places=2)
+
     @patch("app.get_valid_strava_token", return_value="token")
     @patch("app.get_json", return_value=[])
     def test_strava_import_removes_existing_pre_event_strava_rides(self, _get_json_mock, _token_mock):

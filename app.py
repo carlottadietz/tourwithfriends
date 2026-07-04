@@ -149,6 +149,10 @@ def allowed_gpx(filename):
     return Path(filename).suffix.lower() == ".gpx"
 
 
+def allowed_activity_file(filename):
+    return Path(filename).suffix.lower() in {".gpx", ".fit"}
+
+
 def haversine(lat1, lon1, lat2, lon2):
     radius = 6371.0
     lat1, lon1, lat2, lon2 = map(radians, [lat1, lon1, lat2, lon2])
@@ -164,6 +168,10 @@ ELEVATION_HYSTERESIS_M = 15.0
 LOW_HYSTERESIS_THRESHOLD_M = 2.0
 STRAVA_LIKE_ELEVATION_UPLIFT_FACTOR = 1.123
 ELEVATION_UPLIFT_SOURCE_HINTS = ("wahoo", "komoot")
+FIT_ELEVATION_CORRECTION_FACTORS = {
+    # Wahoo FIT ascent is often higher than Strava's corrected value.
+    "wahoo_fitness": 0.94355,
+}
 CADENCE_ZERO_STOP_SPEED_KMH = 22.0
 STATIONARY_DISTANCE_EPSILON_KM = 0.005
 STATIONARY_SPEED_KMH = 0.5
@@ -550,6 +558,56 @@ def parse_gpx_metrics(path):
     }
 
 
+def parse_fit_metrics(path):
+    from fitparse import FitFile
+
+    fit_file = FitFile(path)
+
+    manufacturer = ""
+    for file_id_message in fit_file.get_messages("file_id"):
+        file_id_data = {field.name: field.value for field in file_id_message}
+        manufacturer = str(file_id_data.get("manufacturer") or "").lower()
+        break
+
+    fit_file = FitFile(path)
+    session_data = None
+    for session_message in fit_file.get_messages("session"):
+        session_data = {field.name: field.value for field in session_message}
+        break
+
+    if session_data is None:
+        return {"distance_km": 0.0, "elevation_m": 0.0, "duration_min": 0.0, "created_at": None}
+
+    total_distance_km = round(float(session_data.get("total_distance") or 0.0) / 1000.0, 2)
+    duration_seconds = float(session_data.get("total_timer_time") or session_data.get("total_elapsed_time") or 0.0)
+    duration_minutes = round(duration_seconds / 60.0, 2)
+
+    total_ascent = float(session_data.get("total_ascent") or 0.0)
+    correction_factor = FIT_ELEVATION_CORRECTION_FACTORS.get(manufacturer, 1.0)
+    total_elevation = round(total_ascent * correction_factor, 2)
+
+    start_time = session_data.get("start_time")
+    created_at = None
+    if isinstance(start_time, datetime):
+        if start_time.tzinfo is not None:
+            start_time = start_time.astimezone(timezone.utc).replace(tzinfo=None)
+        created_at = start_time.isoformat()
+
+    return {
+        "distance_km": total_distance_km,
+        "elevation_m": total_elevation,
+        "duration_min": duration_minutes,
+        "created_at": created_at,
+    }
+
+
+def parse_activity_metrics(path):
+    ext = Path(path).suffix.lower()
+    if ext == ".fit":
+        return parse_fit_metrics(path)
+    return parse_gpx_metrics(path)
+
+
 def run_gpx_recalculation_migration():
     conn = sqlite3.connect(app.config["DATABASE_PATH"])
     conn.row_factory = sqlite3.Row
@@ -575,7 +633,7 @@ def run_gpx_recalculation_migration():
                 continue
 
             try:
-                metrics = parse_gpx_metrics(gpx_path)
+                metrics = parse_activity_metrics(gpx_path)
             except Exception:
                 continue
 
@@ -1189,7 +1247,7 @@ def upload():
         return redirect(url_for("index"))
 
     upload_files = request.files.getlist("gpx_file")
-    valid_files = [f for f in upload_files if f and f.filename and allowed_gpx(f.filename)]
+    valid_files = [f for f in upload_files if f and f.filename and allowed_activity_file(f.filename)]
     if not valid_files:
         return redirect(url_for("index"))
 
@@ -1205,7 +1263,7 @@ def upload():
         gpx_file.save(gpx_path)
 
         try:
-            metrics = parse_gpx_metrics(gpx_path)
+            metrics = parse_activity_metrics(gpx_path)
         except Exception:
             if os.path.exists(gpx_path):
                 os.remove(gpx_path)

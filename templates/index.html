@@ -604,8 +604,8 @@
           <span class="badge">Upload</span>
         </div>
         <form action="{{ url_for('upload') }}" method="post" enctype="multipart/form-data">
-          <label for="gpx_file">GPX-Datei</label>
-          <input id="gpx_file" name="gpx_file" type="file" accept=".gpx" multiple required>
+          <label for="gpx_file">GPX- oder FIT-Datei</label>
+          <input id="gpx_file" name="gpx_file" type="file" accept=".gpx,.fit" multiple required>
           <div class="upload-hint"><span>Hinweis:</span> Alte Daten bleiben erhalten und werden dem aktuellen Profil hinzugefuegt. Aktivitäten müssen am selben Kalendertag bis 23:59 hochgeladen werden und können am Folgetag nicht mehr nachgereicht werden. Der Upload-Button wird erst aktiv, sobald mindestens eine GPX-Datei ausgewählt wurde.</div>
           <button id="upload-submit" class="primary" type="submit" disabled>Upload starten</button>
         </form>
