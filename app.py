@@ -161,6 +161,9 @@ def haversine(lat1, lon1, lat2, lon2):
 
 PAUSE_THRESHOLD_SECONDS = 1800
 ELEVATION_HYSTERESIS_M = 15.0
+LOW_HYSTERESIS_THRESHOLD_M = 2.0
+STRAVA_LIKE_ELEVATION_UPLIFT_FACTOR = 1.123
+ELEVATION_UPLIFT_SOURCE_HINTS = ("wahoo", "komoot")
 CADENCE_ZERO_STOP_SPEED_KMH = 22.0
 STATIONARY_DISTANCE_EPSILON_KM = 0.005
 STATIONARY_SPEED_KMH = 0.5
@@ -185,6 +188,26 @@ def calculate_ascent_hysteresis(elevations, threshold_m=ELEVATION_HYSTERESIS_M):
             total_ascent += current - previous
 
     return total_ascent
+
+
+def calculate_ascent_raw(elevations):
+    if not elevations:
+        return 0.0
+    total_ascent = 0.0
+    for previous, current in zip(elevations, elevations[1:]):
+        if current > previous:
+            total_ascent += current - previous
+    return total_ascent
+
+
+def calculate_total_elevation(elevations, source_hint=""):
+    base_ascent = calculate_ascent_hysteresis(elevations, ELEVATION_HYSTERESIS_M)
+    source_hint = (source_hint or "").lower()
+    if any(keyword in source_hint for keyword in ELEVATION_UPLIFT_SOURCE_HINTS):
+        low_hysteresis_ascent = calculate_ascent_hysteresis(elevations, LOW_HYSTERESIS_THRESHOLD_M)
+        uplifted_ascent = low_hysteresis_ascent * STRAVA_LIKE_ELEVATION_UPLIFT_FACTOR
+        return max(base_ascent, uplifted_ascent)
+    return base_ascent
 
 
 def is_allowed_event_date(created_at_iso):
@@ -427,6 +450,7 @@ def import_strava_activities_for_user(conn, user):
 def parse_gpx_metrics(path):
     tree = ET.parse(path)
     root = tree.getroot()
+    source_hint = root.attrib.get("creator", "")
     points = []
     for element in root.iter():
         if element.tag.endswith("trkpt"):
@@ -516,7 +540,7 @@ def parse_gpx_metrics(path):
 
     duration_minutes = round(total_active_seconds / 60.0, 2)
     created_at = start_time.isoformat() if start_time else None
-    total_elevation = calculate_ascent_hysteresis(elevation_samples)
+    total_elevation = calculate_total_elevation(elevation_samples, source_hint)
 
     return {
         "distance_km": round(total_distance, 2),

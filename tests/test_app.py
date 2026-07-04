@@ -453,6 +453,28 @@ class TourWithFriendsTests(unittest.TestCase):
         self.assertTrue(metrics["distance_km"] > 0)
         self.assertEqual(metrics["elevation_m"], 0.0)
 
+        def test_parse_gpx_metrics_applies_komoot_wahoo_elevation_uplift(self):
+                gpx_content = """<?xml version='1.0' encoding='UTF-8'?>
+                <gpx version='1.1' creator='https://www.komoot.de'>
+                    <trk>
+                        <trkseg>
+                            <trkpt lat='46.0000' lon='11.0000'><ele>100</ele><time>2026-07-04T10:00:00Z</time></trkpt>
+                            <trkpt lat='46.0001' lon='11.0001'><ele>105</ele><time>2026-07-04T10:01:00Z</time></trkpt>
+                            <trkpt lat='46.0002' lon='11.0002'><ele>100</ele><time>2026-07-04T10:02:00Z</time></trkpt>
+                            <trkpt lat='46.0003' lon='11.0003'><ele>105</ele><time>2026-07-04T10:03:00Z</time></trkpt>
+                            <trkpt lat='46.0004' lon='11.0004'><ele>100</ele><time>2026-07-04T10:04:00Z</time></trkpt>
+                            <trkpt lat='46.0005' lon='11.0005'><ele>105</ele><time>2026-07-04T10:05:00Z</time></trkpt>
+                        </trkseg>
+                    </trk>
+                </gpx>"""
+                path = os.path.join(self.tmp_dir.name, "ride_komoot_like.gpx")
+                with open(path, "w", encoding="utf-8") as handle:
+                        handle.write(gpx_content)
+
+                metrics = parse_gpx_metrics(path)
+                self.assertTrue(metrics["distance_km"] > 0)
+                self.assertAlmostEqual(metrics["elevation_m"], 16.85, places=2)
+
     def test_user_can_delete_own_ride(self):
         self.client.post(
             "/login",
