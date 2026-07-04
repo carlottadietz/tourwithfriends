@@ -4,6 +4,13 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>tour with friends</title>
+  <meta name="theme-color" content="#facc15">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="TWF">
+  <link rel="manifest" href="{{ url_for('static', filename='manifest.webmanifest') }}">
+  <link rel="apple-touch-icon" sizes="180x180" href="{{ url_for('static', filename='icons/twf-icon-180.png') }}">
+  <link rel="icon" type="image/png" sizes="512x512" href="{{ url_for('static', filename='icons/twf-icon-512.png') }}">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;700;800&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -16,6 +23,12 @@
       --tour-blue: #1d4ed8;
       --tour-red: #dc2626;
       --tour-ink: #0f172a;
+    }
+    html, body {
+      max-width: 100%;
+      overflow-x: clip;
+      overscroll-behavior-x: none;
+      touch-action: pan-y;
     }
     body { font-family: Inter, system-ui, sans-serif; min-height: 100vh; background: radial-gradient(circle at 12% 8%, #fff7cc 0%, #fefce8 20%, transparent 45%), linear-gradient(180deg, #f8fafc 0%, #ffffff 40%, #e2e8f0 100%); color: #0f172a; margin: 0; padding: 24px; overflow-x: hidden; }
     .page { max-width: 1180px; margin: 0 auto; display: grid; gap: 24px; }
@@ -281,6 +294,7 @@
     .ride-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 12px; }
     .ride-item { background: #f8fafc; border: 1px solid rgba(148,163,184,0.2); border-radius: 16px; padding: 12px; display: flex; justify-content: space-between; gap: 12px; align-items: center; }
     .ride-meta { display: grid; gap: 4px; }
+    .ride-meta strong { overflow-wrap: anywhere; word-break: break-word; }
     .delete-form { margin: 0; }
     .delete-form button { padding: 8px 12px; font-size: 0.88rem; }
     .muted { color: #64748b; }
@@ -324,6 +338,27 @@
       }
       .layout-two, .top-three-cards, .stats-grid, .expand-grid, .layout-three { grid-template-columns: 1fr; }
       .topbar { grid-template-columns: 1fr; }
+      .top-three li,
+      .stage-day-line,
+      .stage-line-main,
+      .entry-main,
+      .ride-item,
+      .ride-meta,
+      .card,
+      .form-card,
+      .card-hero,
+      .trikot-card {
+        min-width: 0;
+      }
+      .top-three li {
+        align-items: flex-start;
+      }
+      .top-three li strong {
+        white-space: normal;
+      }
+      .stage-day-line {
+        flex-direction: column;
+      }
       .ride-item { align-items: flex-start; flex-direction: column; }
       .support-fab {
         right: max(14px, env(safe-area-inset-right));
