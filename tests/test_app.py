@@ -322,6 +322,81 @@ class TourWithFriendsTests(unittest.TestCase):
         self.assertAlmostEqual(row[1], 117.0, places=2)
         self.assertAlmostEqual(row[2], 67.0, places=2)
 
+    def test_manual_ride_can_be_saved_and_rendered_with_today_date(self):
+        app.config["CURRENT_TIME_OVERRIDE"] = datetime(2026, 7, 5, 10, 0, 0)
+        self.client.post(
+            "/login",
+            data={"name": "Anna", "gender": "Femme", "profile_image": (BytesIO(b"fake-image-data"), "avatar.png")},
+            content_type="multipart/form-data",
+            follow_redirects=True,
+        )
+
+        response = self.client.post(
+            "/rides/manual",
+            data={"distance_km": "42.5", "avg_speed_kmh": "28.4", "duration_min": "89.8"},
+            follow_redirects=True,
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertIn(b"Heutiges Datum: 05.07.2026", response.data)
+        self.assertIn(b"Manuelle Fahrt", response.data)
+
+        conn = sqlite3.connect(self.db_path)
+        conn.row_factory = sqlite3.Row
+        rows = conn.execute(
+            "SELECT distance_km, avg_speed_kmh, duration_min, created_at FROM rides ORDER BY id ASC"
+        ).fetchall()
+        totals = conn.execute(
+            "SELECT total_distance_km, total_duration_min FROM users WHERE name = ?",
+            ("Anna",),
+        ).fetchone()
+        conn.close()
+
+        self.assertEqual(len(rows), 1)
+        self.assertAlmostEqual(rows[0]["distance_km"], 42.5, places=2)
+        self.assertAlmostEqual(rows[0]["avg_speed_kmh"], 28.4, places=2)
+        self.assertAlmostEqual(rows[0]["duration_min"], 89.8, places=2)
+        self.assertTrue(rows[0]["created_at"].startswith("2026-07-05"))
+        self.assertAlmostEqual(totals[0], 42.5, places=2)
+        self.assertAlmostEqual(totals[1], 89.8, places=2)
+
+    def test_manual_ride_allows_multiple_entries_on_same_day(self):
+        app.config["CURRENT_TIME_OVERRIDE"] = datetime(2026, 7, 5, 10, 0, 0)
+        self.client.post(
+            "/login",
+            data={"name": "Anna", "gender": "Femme", "profile_image": (BytesIO(b"fake-image-data"), "avatar.png")},
+            content_type="multipart/form-data",
+            follow_redirects=True,
+        )
+
+        self.client.post(
+            "/rides/manual",
+            data={"distance_km": "20.0", "avg_speed_kmh": "25.0", "duration_min": "48.0"},
+            follow_redirects=True,
+        )
+        self.client.post(
+            "/rides/manual",
+            data={"distance_km": "35.0", "avg_speed_kmh": "27.5", "duration_min": "76.4"},
+            follow_redirects=True,
+        )
+
+        conn = sqlite3.connect(self.db_path)
+        conn.row_factory = sqlite3.Row
+        rows = conn.execute(
+            "SELECT distance_km, avg_speed_kmh, duration_min FROM rides ORDER BY id ASC"
+        ).fetchall()
+        totals = conn.execute(
+            "SELECT total_distance_km, total_duration_min FROM users WHERE name = ?",
+            ("Anna",),
+        ).fetchone()
+        conn.close()
+
+        self.assertEqual(len(rows), 2)
+        self.assertAlmostEqual(rows[0]["distance_km"], 20.0, places=2)
+        self.assertAlmostEqual(rows[1]["distance_km"], 35.0, places=2)
+        self.assertAlmostEqual(totals[0], 55.0, places=2)
+        self.assertAlmostEqual(totals[1], 124.4, places=2)
+
     @patch("app.get_valid_strava_token", return_value="token")
     @patch("app.get_json", return_value=[])
     def test_strava_import_removes_existing_pre_event_strava_rides(self, _get_json_mock, _token_mock):

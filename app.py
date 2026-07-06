@@ -57,6 +57,7 @@ def init_db():
             distance_km REAL NOT NULL,
             elevation_m REAL DEFAULT 0,
             duration_min REAL DEFAULT 0,
+            avg_speed_kmh REAL DEFAULT 0,
             created_at TEXT NOT NULL,
             FOREIGN KEY(user_id) REFERENCES users(id)
         )
@@ -111,6 +112,18 @@ def init_db():
     ride_column_names = {col[1] for col in ride_columns}
     if "strava_activity_id" not in ride_column_names:
         conn.execute("ALTER TABLE rides ADD COLUMN strava_activity_id TEXT")
+    if "avg_speed_kmh" not in ride_column_names:
+        conn.execute("ALTER TABLE rides ADD COLUMN avg_speed_kmh REAL DEFAULT 0")
+        conn.execute(
+            """
+            UPDATE rides
+            SET avg_speed_kmh = CASE
+                WHEN COALESCE(duration_min, 0) > 0 THEN ROUND((COALESCE(distance_km, 0) / (duration_min / 60.0)), 2)
+                ELSE 0
+            END
+            WHERE avg_speed_kmh IS NULL OR avg_speed_kmh = 0
+            """
+        )
     conn.commit()
     conn.close()
 
@@ -138,6 +151,13 @@ def get_current_user():
     if not user_id:
         return None
     return get_db().execute("SELECT * FROM users WHERE id = ?", (user_id,)).fetchone()
+
+
+def get_current_time():
+    current_time = app.config.get("CURRENT_TIME_OVERRIDE")
+    if current_time is None:
+        current_time = datetime.now()
+    return current_time
 
 
 def allowed_image(filename):
@@ -223,9 +243,7 @@ def is_allowed_event_date(created_at_iso):
         activity_date = datetime.fromisoformat(created_at_iso).date()
     except ValueError:
         return False
-    current_time = app.config.get("CURRENT_TIME_OVERRIDE")
-    if current_time is None:
-        current_time = datetime.now()
+    current_time = get_current_time()
     current_date = current_time.date()
     if (current_date.month, current_date.day) < EVENT_START_MONTH_DAY:
         return False
@@ -368,9 +386,7 @@ def import_strava_activities_for_user(conn, user):
     if not access_token:
         return 0
 
-    current_time = app.config.get("CURRENT_TIME_OVERRIDE")
-    if current_time is None:
-        current_time = datetime.now()
+    current_time = get_current_time()
 
     event_start_date = f"{current_time.year:04d}-{EVENT_START_MONTH_DAY[0]:02d}-{EVENT_START_MONTH_DAY[1]:02d}"
     conn.execute(
@@ -422,15 +438,16 @@ def import_strava_activities_for_user(conn, user):
             distance_km = round(float(activity.get("distance", 0.0)) / 1000.0, 2)
             elevation_m = round(float(activity.get("total_elevation_gain", 0.0)), 2)
             duration_min = round(float(activity.get("moving_time", 0.0)) / 60.0, 2)
+            avg_speed_kmh = round(distance_km / (duration_min / 60.0), 2) if duration_min > 0 else 0.0
             ride_name = (activity.get("name") or f"Strava Ride {strava_activity_id}").strip()
             filename = f"strava_{strava_activity_id}_{secure_filename(ride_name)}"
 
             conn.execute(
                 """
-                INSERT INTO rides (user_id, filename, distance_km, elevation_m, duration_min, created_at, strava_activity_id)
-                VALUES (?, ?, ?, ?, ?, ?, ?)
+                INSERT INTO rides (user_id, filename, distance_km, elevation_m, duration_min, avg_speed_kmh, created_at, strava_activity_id)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
                 """,
-                (user["id"], filename, distance_km, elevation_m, duration_min, created_at, strava_activity_id),
+                (user["id"], filename, distance_km, elevation_m, duration_min, avg_speed_kmh, created_at, strava_activity_id),
             )
             imported_count += 1
             total_distance += distance_km
@@ -454,6 +471,12 @@ def import_strava_activities_for_user(conn, user):
         conn.commit()
 
     return imported_count
+
+
+def calculate_average_speed(distance_km, duration_min):
+    if duration_min <= 0:
+        return 0.0
+    return round(distance_km / (duration_min / 60.0), 2)
 
 def parse_gpx_metrics(path):
     tree = ET.parse(path)
@@ -785,7 +808,16 @@ def index():
     rides = []
     if user:
         rides = conn.execute(
-            "SELECT *, strftime('%d.%m.%Y', created_at) as ride_date FROM rides WHERE user_id = ? ORDER BY created_at DESC LIMIT 5",
+            """
+            SELECT
+                *,
+                strftime('%d.%m.%Y', created_at) as ride_date,
+                COALESCE(avg_speed_kmh, CASE WHEN duration_min > 0 THEN ROUND(distance_km / (duration_min / 60.0), 2) ELSE 0 END) AS ride_speed_kmh
+            FROM rides
+            WHERE user_id = ?
+            ORDER BY created_at DESC, id DESC
+            LIMIT 5
+            """,
             (user["id"],),
         ).fetchall()
 
@@ -809,6 +841,7 @@ def index():
     strava_enabled = bool(app.config["STRAVA_CLIENT_ID"] and app.config["STRAVA_CLIENT_SECRET"])
     strava_imported_count = session.pop("strava_imported_count", None)
     support_public_url = app.config["SUPPORT_PUBLIC_URL"] or url_for("support", _external=True)
+    current_date_display = get_current_time().strftime("%d.%m.%Y")
 
     return render_template(
         "index.html",
@@ -831,6 +864,7 @@ def index():
         strava_connected=strava_connected,
         strava_imported_count=strava_imported_count,
         support_public_url=support_public_url,
+        current_date_display=current_date_display,
     )
 
 
@@ -1275,14 +1309,17 @@ def upload():
                 os.remove(gpx_path)
             continue
 
+        avg_speed_kmh = calculate_average_speed(metrics["distance_km"], metrics["duration_min"])
+
         conn.execute(
-            "INSERT INTO rides (user_id, filename, distance_km, elevation_m, duration_min, created_at) VALUES (?, ?, ?, ?, ?, ?)",
+            "INSERT INTO rides (user_id, filename, distance_km, elevation_m, duration_min, avg_speed_kmh, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)",
             (
                 session["user_id"],
                 filename,
                 metrics["distance_km"],
                 metrics["elevation_m"],
                 metrics["duration_min"],
+                avg_speed_kmh,
                 created_at,
             ),
         )
@@ -1302,6 +1339,53 @@ def upload():
             ),
         )
 
+    conn.commit()
+    return redirect(url_for("index"))
+
+
+@app.route("/rides/manual", methods=["POST"])
+def manual_ride():
+    if not get_current_user():
+        return redirect(url_for("index"))
+
+    try:
+        distance_km = round(float(request.form.get("distance_km", "")), 2)
+        avg_speed_kmh = round(float(request.form.get("avg_speed_kmh", "")), 2)
+        duration_min = round(float(request.form.get("duration_min", "")), 2)
+    except (TypeError, ValueError):
+        return redirect(url_for("index"))
+
+    if distance_km <= 0 or avg_speed_kmh <= 0 or duration_min <= 0:
+        return redirect(url_for("index"))
+
+    current_time = get_current_time()
+    created_at = current_time.replace(microsecond=0).isoformat()
+
+    conn = get_db()
+    conn.execute(
+        """
+        INSERT INTO rides (user_id, filename, distance_km, elevation_m, duration_min, avg_speed_kmh, created_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?)
+        """,
+        (
+            session["user_id"],
+            "Manuelle Fahrt",
+            distance_km,
+            0.0,
+            duration_min,
+            avg_speed_kmh,
+            created_at,
+        ),
+    )
+    conn.execute(
+        """
+        UPDATE users
+        SET total_distance_km = total_distance_km + ?,
+            total_duration_min = total_duration_min + ?
+        WHERE id = ?
+        """,
+        (distance_km, duration_min, session["user_id"]),
+    )
     conn.commit()
     return redirect(url_for("index"))
 

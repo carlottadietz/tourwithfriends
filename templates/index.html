@@ -156,6 +156,22 @@
     .secondary { background: #e2e8f0; color: #0f172a; }
     .upload-hint { color: #0f172a; background: #facc15; border-radius: 16px; padding: 14px 16px; font-size: 0.95rem; }
     .upload-hint span { font-weight: 700; }
+    .ride-dialog {
+      width: min(680px, calc(100vw - 24px));
+      border: none;
+      border-radius: 28px;
+      padding: 0;
+      box-shadow: 0 30px 90px rgba(15,23,42,0.32);
+      background: #ffffff;
+    }
+    .ride-dialog::backdrop { background: rgba(15,23,42,0.58); backdrop-filter: blur(8px); }
+    .ride-dialog-form { display: grid; gap: 16px; padding: 24px; }
+    .ride-dialog-head { display: flex; justify-content: space-between; gap: 12px; align-items: start; }
+    .ride-dialog-head h3 { margin: 0; font-size: 1.5rem; }
+    .ride-dialog-date { margin: 0; padding: 12px 14px; border-radius: 16px; background: #fef3c7; color: #0f172a; font-weight: 700; }
+    .ride-dialog-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+    .ride-dialog-grid label { display: grid; gap: 6px; font-weight: 700; }
+    .ride-dialog-grid small { color: #475569; font-weight: 500; }
     .user-pill { display: inline-flex; align-items: center; gap: 12px; background: #f8fafc; border: 1px solid rgba(148,163,184,0.24); border-radius: 999px; padding: 12px 16px; max-width: fit-content; }
     .avatar { width: 42px; height: 42px; border-radius: 999px; object-fit: cover; }
     .profile-update-form { margin-top: 14px; display: grid; gap: 8px; }
@@ -295,6 +311,7 @@
     .ride-item { background: #f8fafc; border: 1px solid rgba(148,163,184,0.2); border-radius: 16px; padding: 12px; display: flex; justify-content: space-between; gap: 12px; align-items: center; }
     .ride-meta { display: grid; gap: 4px; }
     .ride-meta strong { overflow-wrap: anywhere; word-break: break-word; }
+    .ride-meta span { overflow-wrap: anywhere; word-break: break-word; }
     .delete-form { margin: 0; }
     .delete-form button { padding: 8px 12px; font-size: 0.88rem; }
     .muted { color: #64748b; }
@@ -360,6 +377,7 @@
         flex-direction: column;
       }
       .ride-item { align-items: flex-start; flex-direction: column; }
+      .ride-dialog-grid { grid-template-columns: 1fr; }
       .support-fab {
         right: max(14px, env(safe-area-inset-right));
         bottom: max(14px, env(safe-area-inset-bottom));
@@ -600,15 +618,49 @@
 
       <div class="form-card">
         <div class="section-title">
-          <h2>GPX hochladen</h2>
+          <h2>Fahrten hochladen</h2>
           <span class="badge">Upload</span>
         </div>
         <form action="{{ url_for('upload') }}" method="post" enctype="multipart/form-data">
           <label for="gpx_file">GPX- oder FIT-Datei</label>
           <input id="gpx_file" name="gpx_file" type="file" accept=".gpx,.fit" multiple required>
-          <div class="upload-hint"><span>Hinweis:</span> Alte Daten bleiben erhalten und werden dem aktuellen Profil hinzugefuegt. Aktivitäten müssen am selben Kalendertag bis 23:59 hochgeladen werden und können am Folgetag nicht mehr nachgereicht werden. Der Upload-Button wird erst aktiv, sobald mindestens eine GPX-Datei ausgewählt wurde.</div>
+          <div class="upload-hint"><span>Hinweis:</span> Alte Daten bleiben erhalten und werden dem aktuellen Profil hinzugefuegt. Aktivitäten müssen am selben Kalendertag bis 23:59 hochgeladen werden und können am Folgetag nicht mehr nachgereicht werden. Zusätzlich kannst du Fahrten manuell erfassen.</div>
           <button id="upload-submit" class="primary" type="submit" disabled>Upload starten</button>
         </form>
+        <div class="action-stack">
+          <button id="open-manual-ride" class="secondary" type="button">Fahrt hochladen</button>
+        </div>
+        <dialog id="manual-ride-dialog" class="ride-dialog">
+          <form action="{{ url_for('manual_ride') }}" method="post" class="ride-dialog-form">
+            <div class="ride-dialog-head">
+              <div>
+                <h3>Manuelle Fahrt erfassen</h3>
+                <p class="hero-note">Trage die Werte ohne Datei-Upload ein.</p>
+              </div>
+              <button id="close-manual-ride" class="secondary" type="button">Schließen</button>
+            </div>
+            <p class="ride-dialog-date">Heutiges Datum: {{ current_date_display }}</p>
+            <div class="ride-dialog-grid">
+              <label for="manual-distance">
+                Kilometer
+                <input id="manual-distance" name="distance_km" type="number" min="0" step="0.1" inputmode="decimal" placeholder="z. B. 42.5" required>
+              </label>
+              <label for="manual-speed">
+                Schnitt
+                <input id="manual-speed" name="avg_speed_kmh" type="number" min="0" step="0.1" inputmode="decimal" placeholder="z. B. 28.4" required>
+                <small>km/h</small>
+              </label>
+              <label for="manual-duration">
+                Fahrtzeit
+                <input id="manual-duration" name="duration_min" type="number" min="0" step="0.1" inputmode="decimal" placeholder="z. B. 95" required>
+                <small>Minuten</small>
+              </label>
+            </div>
+            <div class="action-stack">
+              <button class="primary" type="submit">Fahrt speichern</button>
+            </div>
+          </form>
+        </dialog>
         {% if strava_enabled %}
           <div style="margin-top: 14px; display: grid; gap: 8px;">
             <strong>Strava Import</strong>
@@ -710,7 +762,7 @@
             <li class="ride-item">
               <div class="ride-meta">
                 <strong>{{ ride.ride_date }} - {{ ride.filename }}</strong>
-                <span>{{ ride.distance_km }} km · {{ ride.elevation_m }} m · {{ ride.duration_min }} min</span>
+                <span>{{ ride.distance_km }} km · {{ ride.ride_speed_kmh|round(1) }} km/h · {{ ride.duration_min }} min</span>
               </div>
               <form class="delete-form" action="{{ url_for('delete_ride', ride_id=ride.id) }}" method="post">
                 <button class="danger" type="submit">Aktivität löschen</button>
@@ -733,6 +785,9 @@
     const genderInputs = document.querySelectorAll('input[name="gender"]');
     const gpxFileInput = document.getElementById('gpx_file');
     const uploadSubmit = document.getElementById('upload-submit');
+    const manualRideDialog = document.getElementById('manual-ride-dialog');
+    const openManualRideButton = document.getElementById('open-manual-ride');
+    const closeManualRideButton = document.getElementById('close-manual-ride');
 
     if (existingUserSelect && nameInput && profileImageInput && loginSubmit && genderInputs.length) {
       const defaultLabel = 'Anmelden und starten';
@@ -773,6 +828,20 @@
 
       gpxFileInput.addEventListener('change', syncUploadState);
       syncUploadState();
+    }
+
+    if (manualRideDialog && openManualRideButton && closeManualRideButton) {
+      openManualRideButton.addEventListener('click', () => {
+        if (typeof manualRideDialog.showModal === 'function') {
+          manualRideDialog.showModal();
+        } else {
+          manualRideDialog.setAttribute('open', 'open');
+        }
+      });
+
+      closeManualRideButton.addEventListener('click', () => {
+        manualRideDialog.close();
+      });
     }
   </script>
 </body>
