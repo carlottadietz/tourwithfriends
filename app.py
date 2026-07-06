@@ -787,6 +787,64 @@ def index():
         "SELECT id, name, gender, profile_image, total_duration_min FROM users WHERE gender = ? ORDER BY total_duration_min DESC, name ASC",
         (selected_gender,),
     ).fetchall()
+    current_time = get_current_time()
+    current_date_iso = current_time.date().isoformat()
+
+    daily_winners_today = conn.execute(
+        """
+        WITH daily_totals AS (
+            SELECT
+                date(r.created_at) AS ride_day,
+                r.user_id,
+                u.gender,
+                ROUND(SUM(r.distance_km), 2) AS distance_km,
+                ROUND(SUM(r.duration_min), 2) AS duration_min,
+                CASE
+                    WHEN SUM(r.duration_min) > 0 THEN ROUND((SUM(r.distance_km) / SUM(r.duration_min)) * 60.0, 2)
+                    ELSE 0
+                END AS avg_speed_kmh
+            FROM rides r
+            JOIN users u ON r.user_id = u.id
+            WHERE date(r.created_at) = ?
+            GROUP BY date(r.created_at), r.user_id, u.gender
+        )
+        SELECT
+            strftime('%d.%m.%Y', dt.ride_day) AS day,
+            dt.user_id,
+            dt.gender,
+            dt.distance_km,
+            dt.duration_min,
+            dt.avg_speed_kmh,
+            u.name AS user_name,
+            u.profile_image AS profile_image
+        FROM daily_totals dt
+        JOIN users u ON dt.user_id = u.id
+        WHERE NOT EXISTS (
+            SELECT 1
+            FROM daily_totals better
+            WHERE better.ride_day = dt.ride_day
+                            AND better.gender = dt.gender
+              AND (
+                  better.avg_speed_kmh > dt.avg_speed_kmh
+                  OR (
+                      better.avg_speed_kmh = dt.avg_speed_kmh
+                      AND better.distance_km > dt.distance_km
+                  )
+                  OR (
+                      better.avg_speed_kmh = dt.avg_speed_kmh
+                      AND better.distance_km = dt.distance_km
+                      AND better.user_id < dt.user_id
+                  )
+              )
+        )
+        ORDER BY dt.ride_day DESC, dt.gender ASC
+        """
+    , (current_date_iso,)).fetchall()
+    daily_winners = [row for row in daily_winners_today if row["gender"] == selected_gender]
+
+    daily_winner_homme = next((row for row in daily_winners_today if row["gender"] == "Homme"), None)
+    daily_winner_femme = next((row for row in daily_winners_today if row["gender"] == "Femme"), None)
+
     daily_winners_all = conn.execute(
         """
         WITH daily_totals AS (
@@ -836,10 +894,6 @@ def index():
         ORDER BY dt.ride_day DESC, dt.gender ASC
         """
     ).fetchall()
-    daily_winners = [row for row in daily_winners_all if row["gender"] == selected_gender]
-
-    daily_winner_homme = next((row for row in daily_winners_all if row["gender"] == "Homme"), None)
-    daily_winner_femme = next((row for row in daily_winners_all if row["gender"] == "Femme"), None)
     stage_days = []
     stage_days_map = {}
     for row in daily_winners_all:
@@ -1407,6 +1461,7 @@ def manual_ride():
             selected_date = current_time.date()
         distance_km = round(parse_decimal_input(request.form.get("distance_km", "")), 2)
         avg_speed_kmh = round(parse_decimal_input(request.form.get("avg_speed_kmh", "")), 2)
+        elevation_m = round(parse_decimal_input(request.form.get("elevation_m", "")), 2)
         duration_min = parse_duration_minutes(
             request.form.get("duration_hours", ""),
             request.form.get("duration_minutes", ""),
@@ -1434,7 +1489,7 @@ def manual_ride():
             session["user_id"],
             "Manuelle Fahrt",
             distance_km,
-            0.0,
+            elevation_m,
             duration_min,
             avg_speed_kmh,
             created_at,
@@ -1444,10 +1499,11 @@ def manual_ride():
         """
         UPDATE users
         SET total_distance_km = total_distance_km + ?,
+            total_elevation_m = total_elevation_m + ?,
             total_duration_min = total_duration_min + ?
         WHERE id = ?
         """,
-        (distance_km, duration_min, session["user_id"]),
+        (distance_km, elevation_m, duration_min, session["user_id"]),
     )
     conn.commit()
     return redirect(url_for("index"))

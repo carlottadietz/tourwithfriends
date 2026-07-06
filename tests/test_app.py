@@ -337,6 +337,7 @@ class TourWithFriendsTests(unittest.TestCase):
                 "ride_date": "2026-07-10",
                 "distance_km": "42.5",
                 "avg_speed_kmh": "28.4",
+                "elevation_m": "315,0",
                 "duration_hours": "1",
                 "duration_minutes": "29",
                 "duration_seconds": "48",
@@ -353,10 +354,10 @@ class TourWithFriendsTests(unittest.TestCase):
         conn = sqlite3.connect(self.db_path)
         conn.row_factory = sqlite3.Row
         rows = conn.execute(
-            "SELECT distance_km, avg_speed_kmh, duration_min, created_at FROM rides ORDER BY id ASC"
+            "SELECT distance_km, avg_speed_kmh, elevation_m, duration_min, created_at FROM rides ORDER BY id ASC"
         ).fetchall()
         totals = conn.execute(
-            "SELECT total_distance_km, total_duration_min FROM users WHERE name = ?",
+            "SELECT total_distance_km, total_elevation_m, total_duration_min FROM users WHERE name = ?",
             ("Anna",),
         ).fetchone()
         conn.close()
@@ -364,10 +365,12 @@ class TourWithFriendsTests(unittest.TestCase):
         self.assertEqual(len(rows), 1)
         self.assertAlmostEqual(rows[0]["distance_km"], 42.5, places=2)
         self.assertAlmostEqual(rows[0]["avg_speed_kmh"], 28.4, places=2)
+        self.assertAlmostEqual(rows[0]["elevation_m"], 315.0, places=2)
         self.assertAlmostEqual(rows[0]["duration_min"], 89.8, places=2)
         self.assertTrue(rows[0]["created_at"].startswith("2026-07-10"))
         self.assertAlmostEqual(totals[0], 42.5, places=2)
-        self.assertAlmostEqual(totals[1], 89.8, places=2)
+        self.assertAlmostEqual(totals[1], 315.0, places=2)
+        self.assertAlmostEqual(totals[2], 89.8, places=2)
 
     def test_manual_ride_accepts_comma_decimals_for_distance_and_speed(self):
         app.config["CURRENT_TIME_OVERRIDE"] = datetime(2026, 7, 5, 10, 0, 0)
@@ -384,6 +387,7 @@ class TourWithFriendsTests(unittest.TestCase):
                 "ride_date": "2026-07-10",
                 "distance_km": "42,50",
                 "avg_speed_kmh": "28,40",
+                "elevation_m": "315,5",
                 "duration_hours": "1",
                 "duration_minutes": "29",
                 "duration_seconds": "48",
@@ -396,12 +400,13 @@ class TourWithFriendsTests(unittest.TestCase):
         conn = sqlite3.connect(self.db_path)
         conn.row_factory = sqlite3.Row
         ride = conn.execute(
-            "SELECT distance_km, avg_speed_kmh FROM rides ORDER BY id ASC LIMIT 1"
+            "SELECT distance_km, avg_speed_kmh, elevation_m FROM rides ORDER BY id ASC LIMIT 1"
         ).fetchone()
         conn.close()
 
         self.assertAlmostEqual(ride["distance_km"], 42.5, places=2)
         self.assertAlmostEqual(ride["avg_speed_kmh"], 28.4, places=2)
+        self.assertAlmostEqual(ride["elevation_m"], 315.5, places=2)
 
     def test_manual_ride_allows_multiple_entries_on_same_day(self):
         app.config["CURRENT_TIME_OVERRIDE"] = datetime(2026, 7, 5, 10, 0, 0)
@@ -418,6 +423,7 @@ class TourWithFriendsTests(unittest.TestCase):
                 "ride_date": "2026-07-10",
                 "distance_km": "20.0",
                 "avg_speed_kmh": "25.0",
+                "elevation_m": "120.0",
                 "duration_hours": "0",
                 "duration_minutes": "48",
                 "duration_seconds": "0",
@@ -430,6 +436,7 @@ class TourWithFriendsTests(unittest.TestCase):
                 "ride_date": "2026-07-10",
                 "distance_km": "35.0",
                 "avg_speed_kmh": "27.5",
+                "elevation_m": "180.0",
                 "duration_hours": "1",
                 "duration_minutes": "16",
                 "duration_seconds": "24",
@@ -440,7 +447,7 @@ class TourWithFriendsTests(unittest.TestCase):
         conn = sqlite3.connect(self.db_path)
         conn.row_factory = sqlite3.Row
         rows = conn.execute(
-            "SELECT distance_km, avg_speed_kmh, duration_min FROM rides ORDER BY id ASC"
+            "SELECT distance_km, avg_speed_kmh, elevation_m, duration_min FROM rides ORDER BY id ASC"
         ).fetchall()
         totals = conn.execute(
             "SELECT total_distance_km, total_duration_min FROM users WHERE name = ?",
@@ -451,8 +458,42 @@ class TourWithFriendsTests(unittest.TestCase):
         self.assertEqual(len(rows), 2)
         self.assertAlmostEqual(rows[0]["distance_km"], 20.0, places=2)
         self.assertAlmostEqual(rows[1]["distance_km"], 35.0, places=2)
+        self.assertAlmostEqual(rows[0]["elevation_m"], 120.0, places=2)
+        self.assertAlmostEqual(rows[1]["elevation_m"], 180.0, places=2)
         self.assertAlmostEqual(totals[0], 55.0, places=2)
         self.assertAlmostEqual(totals[1], 124.4, places=2)
+
+    def test_stage_winner_box_remains_empty_when_no_ride_today(self):
+        app.config["CURRENT_TIME_OVERRIDE"] = datetime(2026, 7, 5, 10, 0, 0)
+        self.client.post(
+            "/login",
+            data={"name": "Anna", "gender": "Femme", "profile_image": (BytesIO(b"fake-image-data"), "avatar.png")},
+            content_type="multipart/form-data",
+            follow_redirects=True,
+        )
+
+        self.client.post(
+            "/rides/manual",
+            data={
+                "ride_date": "2026-07-04",
+                "distance_km": "20,0",
+                "avg_speed_kmh": "25,0",
+                "elevation_m": "120,0",
+                "duration_hours": "0",
+                "duration_minutes": "48",
+                "duration_seconds": "0",
+            },
+            follow_redirects=True,
+        )
+
+        response = self.client.get("/", follow_redirects=True)
+        html = response.data.decode("utf-8")
+        stage_block = html.split("Etappensieger des Tages", 1)[1].split("Trikotwertung", 1)[0]
+
+        self.assertNotIn("04.07.2026", stage_block)
+        self.assertNotIn("Noch kein Etappensieg.", stage_block)
+        self.assertIn("Femme", stage_block)
+        self.assertIn("Homme", stage_block)
 
     @patch("app.get_valid_strava_token", return_value="token")
     @patch("app.get_json", return_value=[])

@@ -167,8 +167,8 @@
     .ride-dialog-head { display: flex; justify-content: space-between; gap: 12px; align-items: start; }
     .ride-dialog-head h3 { margin: 0; font-size: 1.5rem; }
     .ride-dialog-copy { margin: 0; color: #334155; }
-    .ride-dialog-date { margin: 0; padding: 12px 14px; border-radius: 16px; background: #fef3c7; color: #0f172a; font-weight: 700; display: grid; gap: 8px; }
-    .ride-dialog-date input { width: 100%; min-width: 0; min-height: 56px; box-sizing: border-box; }
+    .ride-dialog-date { margin: 0; display: grid; gap: 6px; font-weight: 700; color: #0f172a; }
+    .ride-dialog-date input { width: 100%; min-width: 0; min-height: 72px; box-sizing: border-box; }
     .ride-dialog-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; align-items: stretch; }
     .ride-dialog-grid > label,
     .ride-duration-field { min-width: 0; }
@@ -450,8 +450,6 @@
                 <span class="stage-gender-name">{{ daily_winner_femme.user_name }}</span>
               </div>
               <span class="stage-gender-meta">{{ daily_winner_femme.day }} · {{ daily_winner_femme.distance_km }} km · {{ daily_winner_femme.avg_speed_kmh|round(2) }} km/h</span>
-            {% else %}
-              <span class="stage-gender-meta">Noch kein Etappensieg.</span>
             {% endif %}
           </div>
           <div class="stage-gender-card">
@@ -466,8 +464,6 @@
                 <span class="stage-gender-name">{{ daily_winner_homme.user_name }}</span>
               </div>
               <span class="stage-gender-meta">{{ daily_winner_homme.day }} · {{ daily_winner_homme.distance_km }} km · {{ daily_winner_homme.avg_speed_kmh|round(2) }} km/h</span>
-            {% else %}
-              <span class="stage-gender-meta">Noch kein Etappensieg.</span>
             {% endif %}
           </div>
         </div>
@@ -658,6 +654,11 @@
                 Schnitt
                 <input id="manual-speed" name="avg_speed_kmh" type="text" inputmode="decimal" placeholder="z. B. 28,4" required>
                 <small>km/h</small>
+              </label>
+              <label for="manual-elevation">
+                Höhenmeter
+                <input id="manual-elevation" name="elevation_m" type="text" inputmode="decimal" placeholder="z. B. 250,0" required>
+                <small>Meter</small>
               </label>
               <div class="ride-duration-field">
                 <span>Fahrtzeit</span>
