@@ -156,18 +156,30 @@
     .secondary { background: #e2e8f0; color: #0f172a; }
     .ride-dialog {
       width: min(680px, calc(100vw - 24px));
+      max-width: calc(100vw - 24px);
       border: none;
       border-radius: 28px;
       padding: 0;
       box-shadow: 0 30px 90px rgba(15,23,42,0.32);
       background: #ffffff;
+      overflow: hidden;
     }
     .ride-dialog::backdrop { background: rgba(15,23,42,0.58); backdrop-filter: blur(8px); }
-    .ride-dialog-form { display: grid; gap: 16px; padding: 24px; }
+    .ride-dialog-form {
+      display: grid;
+      gap: 16px;
+      padding: 24px;
+      max-height: calc(100vh - 24px);
+      overflow-y: auto;
+      overflow-x: hidden;
+      overscroll-behavior: contain;
+      touch-action: pan-y;
+      box-sizing: border-box;
+    }
     .ride-dialog-head { display: flex; justify-content: space-between; gap: 12px; align-items: start; }
     .ride-dialog-head h3 { margin: 0; font-size: 1.5rem; }
     .ride-dialog-copy { margin: 0; color: #334155; }
-    .ride-dialog-date { margin: 0; display: grid; gap: 6px; font-weight: 700; color: #0f172a; }
+    .ride-dialog-date { margin: 0; display: grid; gap: 6px; font-weight: 700; color: #0f172a; width: 100%; }
     .ride-dialog-date input { width: 100%; min-width: 0; min-height: 72px; box-sizing: border-box; }
     .ride-dialog-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; align-items: stretch; }
     .ride-dialog-grid > label,
@@ -175,12 +187,26 @@
     .ride-dialog-grid label { display: grid; gap: 6px; font-weight: 700; align-content: start; }
     .ride-dialog-grid small { color: #475569; font-weight: 500; min-height: 1.1em; }
     .ride-dialog-grid input { min-height: 72px; width: 100%; box-sizing: border-box; }
-    .ride-dialog-grid .ride-date-field { grid-column: 1 / -1; }
-    .ride-duration-field { display: grid; gap: 8px; }
+    .ride-duration-field { display: grid; gap: 8px; grid-column: 1 / -1; }
+    .ride-duration-field > span { font-weight: 700; }
     .ride-duration-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; align-items: stretch; }
     .ride-duration-grid label { display: grid; gap: 6px; min-width: 0; }
     .ride-duration-grid input { width: 100%; box-sizing: border-box; }
     .ride-duration-grid small { min-height: 1.1em; }
+    @media (max-width: 960px) {
+      .ride-dialog {
+        width: calc(100vw - 24px);
+      }
+
+      .ride-dialog-form {
+        max-height: calc(100vh - 24px);
+      }
+
+      .ride-dialog-grid,
+      .ride-duration-grid {
+        grid-template-columns: 1fr;
+      }
+    }
     .user-pill { display: inline-flex; align-items: center; gap: 12px; background: #f8fafc; border: 1px solid rgba(148,163,184,0.24); border-radius: 999px; padding: 12px 16px; max-width: fit-content; }
     .avatar { width: 42px; height: 42px; border-radius: 999px; object-fit: cover; }
     .profile-update-form { margin-top: 14px; display: grid; gap: 8px; }
@@ -640,11 +666,11 @@
               <button id="close-manual-ride" class="secondary" type="button">Schließen</button>
             </div>
             <p class="ride-dialog-copy">Nutze die Werte, die dir in Strava oder Wahoo angezeigt werden.</p>
-            <label class="ride-dialog-date ride-date-field" for="manual-ride-date">
-              Datum der Fahrt
-              <input id="manual-ride-date" name="ride_date" type="date" min="{{ manual_ride_min_date }}" max="{{ manual_ride_max_date }}" value="{{ manual_ride_date_value }}" required>
-            </label>
             <div class="ride-dialog-grid">
+              <label class="ride-dialog-date" for="manual-ride-date">
+                Datum der Fahrt
+                <input id="manual-ride-date" name="ride_date" type="date" min="{{ manual_ride_min_date }}" max="{{ manual_ride_max_date }}" value="{{ manual_ride_date_value }}" required>
+              </label>
               <label for="manual-distance">
                 Distanz
                 <input id="manual-distance" name="distance_km" type="text" inputmode="decimal" placeholder="z. B. 42,50" required>
