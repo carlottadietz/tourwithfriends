@@ -369,6 +369,40 @@ class TourWithFriendsTests(unittest.TestCase):
         self.assertAlmostEqual(totals[0], 42.5, places=2)
         self.assertAlmostEqual(totals[1], 89.8, places=2)
 
+    def test_manual_ride_accepts_comma_decimals_for_distance_and_speed(self):
+        app.config["CURRENT_TIME_OVERRIDE"] = datetime(2026, 7, 5, 10, 0, 0)
+        self.client.post(
+            "/login",
+            data={"name": "Anna", "gender": "Femme", "profile_image": (BytesIO(b"fake-image-data"), "avatar.png")},
+            content_type="multipart/form-data",
+            follow_redirects=True,
+        )
+
+        response = self.client.post(
+            "/rides/manual",
+            data={
+                "ride_date": "2026-07-10",
+                "distance_km": "42,50",
+                "avg_speed_kmh": "28,40",
+                "duration_hours": "1",
+                "duration_minutes": "29",
+                "duration_seconds": "48",
+            },
+            follow_redirects=True,
+        )
+
+        self.assertEqual(response.status_code, 200)
+
+        conn = sqlite3.connect(self.db_path)
+        conn.row_factory = sqlite3.Row
+        ride = conn.execute(
+            "SELECT distance_km, avg_speed_kmh FROM rides ORDER BY id ASC LIMIT 1"
+        ).fetchone()
+        conn.close()
+
+        self.assertAlmostEqual(ride["distance_km"], 42.5, places=2)
+        self.assertAlmostEqual(ride["avg_speed_kmh"], 28.4, places=2)
+
     def test_manual_ride_allows_multiple_entries_on_same_day(self):
         app.config["CURRENT_TIME_OVERRIDE"] = datetime(2026, 7, 5, 10, 0, 0)
         self.client.post(

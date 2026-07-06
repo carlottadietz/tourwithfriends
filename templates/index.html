@@ -167,16 +167,19 @@
     .ride-dialog-head { display: flex; justify-content: space-between; gap: 12px; align-items: start; }
     .ride-dialog-head h3 { margin: 0; font-size: 1.5rem; }
     .ride-dialog-copy { margin: 0; color: #334155; }
-    .ride-dialog-date { margin: 0; padding: 12px 14px; border-radius: 16px; background: #fef3c7; color: #0f172a; font-weight: 700; display: grid; gap: 4px; }
-    .ride-dialog-date strong { display: block; }
-    .ride-dialog-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; align-items: start; }
+    .ride-dialog-date { margin: 0; padding: 12px 14px; border-radius: 16px; background: #fef3c7; color: #0f172a; font-weight: 700; display: grid; gap: 8px; }
+    .ride-dialog-date input { width: 100%; min-width: 0; min-height: 56px; box-sizing: border-box; }
+    .ride-dialog-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; align-items: stretch; }
+    .ride-dialog-grid > label,
+    .ride-duration-field { min-width: 0; }
     .ride-dialog-grid label { display: grid; gap: 6px; font-weight: 700; align-content: start; }
     .ride-dialog-grid small { color: #475569; font-weight: 500; min-height: 1.1em; }
-    .ride-dialog-grid input { min-height: 72px; }
+    .ride-dialog-grid input { min-height: 72px; width: 100%; box-sizing: border-box; }
     .ride-dialog-grid .ride-date-field { grid-column: 1 / -1; }
     .ride-duration-field { display: grid; gap: 8px; }
-    .ride-duration-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; align-items: start; }
-    .ride-duration-grid label { display: grid; gap: 6px; }
+    .ride-duration-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; align-items: stretch; }
+    .ride-duration-grid label { display: grid; gap: 6px; min-width: 0; }
+    .ride-duration-grid input { width: 100%; box-sizing: border-box; }
     .ride-duration-grid small { min-height: 1.1em; }
     .user-pill { display: inline-flex; align-items: center; gap: 12px; background: #f8fafc; border: 1px solid rgba(148,163,184,0.24); border-radius: 999px; padding: 12px 16px; max-width: fit-content; }
     .avatar { width: 42px; height: 42px; border-radius: 999px; object-fit: cover; }
@@ -643,18 +646,17 @@
             <p class="ride-dialog-copy">Nutze die Werte, die dir in Strava oder Wahoo angezeigt werden.</p>
             <label class="ride-dialog-date ride-date-field" for="manual-ride-date">
               Datum der Fahrt
-              <strong>Tour de France: {{ manual_ride_min_date|replace('-', '.') }} - {{ manual_ride_max_date|replace('-', '.') }}</strong>
               <input id="manual-ride-date" name="ride_date" type="date" min="{{ manual_ride_min_date }}" max="{{ manual_ride_max_date }}" value="{{ manual_ride_date_value }}" required>
             </label>
             <div class="ride-dialog-grid">
               <label for="manual-distance">
                 Distanz
-                <input id="manual-distance" name="distance_km" type="number" min="0" step="0.1" inputmode="decimal" placeholder="z. B. 42.5" required>
+                <input id="manual-distance" name="distance_km" type="text" inputmode="decimal" placeholder="z. B. 42,50" required>
                 <small>Kilometer</small>
               </label>
               <label for="manual-speed">
                 Schnitt
-                <input id="manual-speed" name="avg_speed_kmh" type="number" min="0" step="0.1" inputmode="decimal" placeholder="z. B. 28.4" required>
+                <input id="manual-speed" name="avg_speed_kmh" type="text" inputmode="decimal" placeholder="z. B. 28,4" required>
                 <small>km/h</small>
               </label>
               <div class="ride-duration-field">

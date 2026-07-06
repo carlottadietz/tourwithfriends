@@ -510,6 +510,10 @@ def calculate_average_speed(distance_km, duration_min):
     return round(distance_km / (duration_min / 60.0), 2)
 
 
+def parse_decimal_input(raw_value):
+    return float(str(raw_value or "").strip().replace(",", "."))
+
+
 def parse_duration_minutes(hours_text, minutes_text, seconds_text):
     hours = int(hours_text or 0)
     minutes = int(minutes_text or 0)
@@ -1401,8 +1405,8 @@ def manual_ride():
             selected_date = datetime.fromisoformat(selected_date_raw).date()
         else:
             selected_date = current_time.date()
-        distance_km = round(float(request.form.get("distance_km", "")), 2)
-        avg_speed_kmh = round(float(request.form.get("avg_speed_kmh", "")), 2)
+        distance_km = round(parse_decimal_input(request.form.get("distance_km", "")), 2)
+        avg_speed_kmh = round(parse_decimal_input(request.form.get("avg_speed_kmh", "")), 2)
         duration_min = parse_duration_minutes(
             request.form.get("duration_hours", ""),
             request.form.get("duration_minutes", ""),
