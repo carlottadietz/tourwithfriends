@@ -333,12 +333,21 @@ class TourWithFriendsTests(unittest.TestCase):
 
         response = self.client.post(
             "/rides/manual",
-            data={"distance_km": "42.5", "avg_speed_kmh": "28.4", "duration_min": "89.8"},
+            data={
+                "ride_date": "2026-07-10",
+                "distance_km": "42.5",
+                "avg_speed_kmh": "28.4",
+                "duration_hours": "1",
+                "duration_minutes": "29",
+                "duration_seconds": "48",
+            },
             follow_redirects=True,
         )
 
         self.assertEqual(response.status_code, 200)
-        self.assertIn(b"Heutiges Datum: 05.07.2026", response.data)
+        self.assertIn(b'min="2026-07-04"', response.data)
+        self.assertIn(b'max="2026-07-26"', response.data)
+        self.assertIn(b'value="2026-07-05"', response.data)
         self.assertIn(b"Manuelle Fahrt", response.data)
 
         conn = sqlite3.connect(self.db_path)
@@ -356,7 +365,7 @@ class TourWithFriendsTests(unittest.TestCase):
         self.assertAlmostEqual(rows[0]["distance_km"], 42.5, places=2)
         self.assertAlmostEqual(rows[0]["avg_speed_kmh"], 28.4, places=2)
         self.assertAlmostEqual(rows[0]["duration_min"], 89.8, places=2)
-        self.assertTrue(rows[0]["created_at"].startswith("2026-07-05"))
+        self.assertTrue(rows[0]["created_at"].startswith("2026-07-10"))
         self.assertAlmostEqual(totals[0], 42.5, places=2)
         self.assertAlmostEqual(totals[1], 89.8, places=2)
 
@@ -371,12 +380,26 @@ class TourWithFriendsTests(unittest.TestCase):
 
         self.client.post(
             "/rides/manual",
-            data={"distance_km": "20.0", "avg_speed_kmh": "25.0", "duration_min": "48.0"},
+            data={
+                "ride_date": "2026-07-10",
+                "distance_km": "20.0",
+                "avg_speed_kmh": "25.0",
+                "duration_hours": "0",
+                "duration_minutes": "48",
+                "duration_seconds": "0",
+            },
             follow_redirects=True,
         )
         self.client.post(
             "/rides/manual",
-            data={"distance_km": "35.0", "avg_speed_kmh": "27.5", "duration_min": "76.4"},
+            data={
+                "ride_date": "2026-07-10",
+                "distance_km": "35.0",
+                "avg_speed_kmh": "27.5",
+                "duration_hours": "1",
+                "duration_minutes": "16",
+                "duration_seconds": "24",
+            },
             follow_redirects=True,
         )
 

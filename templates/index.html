@@ -154,8 +154,6 @@
     .danger { background: #ef4444; color: #ffffff; }
     .strava { background: #fc4c02; color: #ffffff; }
     .secondary { background: #e2e8f0; color: #0f172a; }
-    .upload-hint { color: #0f172a; background: #facc15; border-radius: 16px; padding: 14px 16px; font-size: 0.95rem; }
-    .upload-hint span { font-weight: 700; }
     .ride-dialog {
       width: min(680px, calc(100vw - 24px));
       border: none;
@@ -168,10 +166,18 @@
     .ride-dialog-form { display: grid; gap: 16px; padding: 24px; }
     .ride-dialog-head { display: flex; justify-content: space-between; gap: 12px; align-items: start; }
     .ride-dialog-head h3 { margin: 0; font-size: 1.5rem; }
-    .ride-dialog-date { margin: 0; padding: 12px 14px; border-radius: 16px; background: #fef3c7; color: #0f172a; font-weight: 700; }
-    .ride-dialog-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
-    .ride-dialog-grid label { display: grid; gap: 6px; font-weight: 700; }
-    .ride-dialog-grid small { color: #475569; font-weight: 500; }
+    .ride-dialog-copy { margin: 0; color: #334155; }
+    .ride-dialog-date { margin: 0; padding: 12px 14px; border-radius: 16px; background: #fef3c7; color: #0f172a; font-weight: 700; display: grid; gap: 4px; }
+    .ride-dialog-date strong { display: block; }
+    .ride-dialog-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; align-items: start; }
+    .ride-dialog-grid label { display: grid; gap: 6px; font-weight: 700; align-content: start; }
+    .ride-dialog-grid small { color: #475569; font-weight: 500; min-height: 1.1em; }
+    .ride-dialog-grid input { min-height: 72px; }
+    .ride-dialog-grid .ride-date-field { grid-column: 1 / -1; }
+    .ride-duration-field { display: grid; gap: 8px; }
+    .ride-duration-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; align-items: start; }
+    .ride-duration-grid label { display: grid; gap: 6px; }
+    .ride-duration-grid small { min-height: 1.1em; }
     .user-pill { display: inline-flex; align-items: center; gap: 12px; background: #f8fafc; border: 1px solid rgba(148,163,184,0.24); border-radius: 999px; padding: 12px 16px; max-width: fit-content; }
     .avatar { width: 42px; height: 42px; border-radius: 999px; object-fit: cover; }
     .profile-update-form { margin-top: 14px; display: grid; gap: 8px; }
@@ -621,14 +627,9 @@
           <h2>Fahrten hochladen</h2>
           <span class="badge">Upload</span>
         </div>
-        <form action="{{ url_for('upload') }}" method="post" enctype="multipart/form-data">
-          <label for="gpx_file">GPX- oder FIT-Datei</label>
-          <input id="gpx_file" name="gpx_file" type="file" accept=".gpx,.fit" multiple required>
-          <div class="upload-hint"><span>Hinweis:</span> Alte Daten bleiben erhalten und werden dem aktuellen Profil hinzugefuegt. Aktivitäten müssen am selben Kalendertag bis 23:59 hochgeladen werden und können am Folgetag nicht mehr nachgereicht werden. Zusätzlich kannst du Fahrten manuell erfassen.</div>
-          <button id="upload-submit" class="primary" type="submit" disabled>Upload starten</button>
-        </form>
+        <p class="ride-dialog-copy">Trage die Werte ein, wie sie dir in Strava oder Wahoo angezeigt werden.</p>
         <div class="action-stack">
-          <button id="open-manual-ride" class="secondary" type="button">Fahrt hochladen</button>
+          <button id="open-manual-ride" class="primary" type="button" style="width: 100%; min-height: 64px; font-size: 1.05rem;">Fahrt hochladen</button>
         </div>
         <dialog id="manual-ride-dialog" class="ride-dialog">
           <form action="{{ url_for('manual_ride') }}" method="post" class="ride-dialog-form">
@@ -639,22 +640,40 @@
               </div>
               <button id="close-manual-ride" class="secondary" type="button">Schließen</button>
             </div>
-            <p class="ride-dialog-date">Heutiges Datum: {{ current_date_display }}</p>
+            <p class="ride-dialog-copy">Nutze die Werte, die dir in Strava oder Wahoo angezeigt werden.</p>
+            <label class="ride-dialog-date ride-date-field" for="manual-ride-date">
+              Datum der Fahrt
+              <strong>Tour de France: {{ manual_ride_min_date|replace('-', '.') }} - {{ manual_ride_max_date|replace('-', '.') }}</strong>
+              <input id="manual-ride-date" name="ride_date" type="date" min="{{ manual_ride_min_date }}" max="{{ manual_ride_max_date }}" value="{{ manual_ride_date_value }}" required>
+            </label>
             <div class="ride-dialog-grid">
               <label for="manual-distance">
-                Kilometer
+                Distanz
                 <input id="manual-distance" name="distance_km" type="number" min="0" step="0.1" inputmode="decimal" placeholder="z. B. 42.5" required>
+                <small>Kilometer</small>
               </label>
               <label for="manual-speed">
                 Schnitt
                 <input id="manual-speed" name="avg_speed_kmh" type="number" min="0" step="0.1" inputmode="decimal" placeholder="z. B. 28.4" required>
                 <small>km/h</small>
               </label>
-              <label for="manual-duration">
-                Fahrtzeit
-                <input id="manual-duration" name="duration_min" type="number" min="0" step="0.1" inputmode="decimal" placeholder="z. B. 95" required>
-                <small>Minuten</small>
-              </label>
+              <div class="ride-duration-field">
+                <span>Fahrtzeit</span>
+                <div class="ride-duration-grid">
+                  <label for="manual-duration-hours">
+                    Stunden
+                    <input id="manual-duration-hours" name="duration_hours" type="number" min="0" step="1" inputmode="numeric" placeholder="0" required>
+                  </label>
+                  <label for="manual-duration-minutes">
+                    Minuten
+                    <input id="manual-duration-minutes" name="duration_minutes" type="number" min="0" max="59" step="1" inputmode="numeric" placeholder="95" required>
+                  </label>
+                  <label for="manual-duration-seconds">
+                    Sekunden
+                    <input id="manual-duration-seconds" name="duration_seconds" type="number" min="0" max="59" step="1" inputmode="numeric" placeholder="0" required>
+                  </label>
+                </div>
+              </div>
             </div>
             <div class="action-stack">
               <button class="primary" type="submit">Fahrt speichern</button>

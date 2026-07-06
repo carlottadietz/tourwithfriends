@@ -160,6 +160,36 @@ def get_current_time():
     return current_time
 
 
+def get_tour_date_bounds(current_time=None):
+    current_time = current_time or get_current_time()
+    start_date = current_time.replace(
+        month=EVENT_START_MONTH_DAY[0],
+        day=EVENT_START_MONTH_DAY[1],
+        hour=0,
+        minute=0,
+        second=0,
+        microsecond=0,
+    ).date()
+    end_date = current_time.replace(
+        month=EVENT_END_MONTH_DAY[0],
+        day=EVENT_END_MONTH_DAY[1],
+        hour=0,
+        minute=0,
+        second=0,
+        microsecond=0,
+    ).date()
+    return start_date, end_date
+
+
+def clamp_date_to_tour_window(target_date, current_time=None):
+    start_date, end_date = get_tour_date_bounds(current_time)
+    if target_date < start_date:
+        return start_date
+    if target_date > end_date:
+        return end_date
+    return target_date
+
+
 def allowed_image(filename):
     ext = Path(filename).suffix.lower()
     return ext in {".png", ".jpg", ".jpeg", ".webp"}
@@ -196,6 +226,7 @@ CADENCE_ZERO_STOP_SPEED_KMH = 22.0
 STATIONARY_DISTANCE_EPSILON_KM = 0.005
 STATIONARY_SPEED_KMH = 0.5
 EVENT_START_MONTH_DAY = (7, 4)
+EVENT_END_MONTH_DAY = (7, 26)
 VALID_GENDERS = ("Femme", "Homme")
 
 
@@ -477,6 +508,15 @@ def calculate_average_speed(distance_km, duration_min):
     if duration_min <= 0:
         return 0.0
     return round(distance_km / (duration_min / 60.0), 2)
+
+
+def parse_duration_minutes(hours_text, minutes_text, seconds_text):
+    hours = int(hours_text or 0)
+    minutes = int(minutes_text or 0)
+    seconds = int(seconds_text or 0)
+    if hours < 0 or minutes < 0 or seconds < 0:
+        raise ValueError("Duration values must be non-negative")
+    return round(hours * 60 + minutes + (seconds / 60.0), 2)
 
 def parse_gpx_metrics(path):
     tree = ET.parse(path)
@@ -841,7 +881,10 @@ def index():
     strava_enabled = bool(app.config["STRAVA_CLIENT_ID"] and app.config["STRAVA_CLIENT_SECRET"])
     strava_imported_count = session.pop("strava_imported_count", None)
     support_public_url = app.config["SUPPORT_PUBLIC_URL"] or url_for("support", _external=True)
-    current_date_display = get_current_time().strftime("%d.%m.%Y")
+    current_time = get_current_time()
+    current_date_display = current_time.strftime("%d.%m.%Y")
+    tour_start_date, tour_end_date = get_tour_date_bounds(current_time)
+    manual_ride_date_value = clamp_date_to_tour_window(current_time.date(), current_time).isoformat()
 
     return render_template(
         "index.html",
@@ -865,6 +908,9 @@ def index():
         strava_imported_count=strava_imported_count,
         support_public_url=support_public_url,
         current_date_display=current_date_display,
+        manual_ride_date_value=manual_ride_date_value,
+        manual_ride_min_date=tour_start_date.isoformat(),
+        manual_ride_max_date=tour_end_date.isoformat(),
     )
 
 
@@ -1349,17 +1395,30 @@ def manual_ride():
         return redirect(url_for("index"))
 
     try:
+        current_time = get_current_time()
+        selected_date_raw = request.form.get("ride_date", "").strip()
+        if selected_date_raw:
+            selected_date = datetime.fromisoformat(selected_date_raw).date()
+        else:
+            selected_date = current_time.date()
         distance_km = round(float(request.form.get("distance_km", "")), 2)
         avg_speed_kmh = round(float(request.form.get("avg_speed_kmh", "")), 2)
-        duration_min = round(float(request.form.get("duration_min", "")), 2)
+        duration_min = parse_duration_minutes(
+            request.form.get("duration_hours", ""),
+            request.form.get("duration_minutes", ""),
+            request.form.get("duration_seconds", ""),
+        )
     except (TypeError, ValueError):
         return redirect(url_for("index"))
 
     if distance_km <= 0 or avg_speed_kmh <= 0 or duration_min <= 0:
         return redirect(url_for("index"))
 
-    current_time = get_current_time()
-    created_at = current_time.replace(microsecond=0).isoformat()
+    start_date, end_date = get_tour_date_bounds(current_time)
+    if selected_date < start_date or selected_date > end_date:
+        return redirect(url_for("index"))
+
+    created_at = datetime.combine(selected_date, current_time.time()).replace(microsecond=0).isoformat()
 
     conn = get_db()
     conn.execute(
