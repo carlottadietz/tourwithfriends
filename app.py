@@ -792,52 +792,61 @@ def index():
 
     daily_winners_today = conn.execute(
         """
-        WITH daily_totals AS (
+        WITH daily_rides AS (
             SELECT
+                r.id AS ride_id,
                 date(r.created_at) AS ride_day,
                 r.user_id,
                 u.gender,
-                ROUND(SUM(r.distance_km), 2) AS distance_km,
-                ROUND(SUM(r.duration_min), 2) AS duration_min,
-                CASE
-                    WHEN SUM(r.duration_min) > 0 THEN ROUND((SUM(r.distance_km) / SUM(r.duration_min)) * 60.0, 2)
-                    ELSE 0
-                END AS avg_speed_kmh
+                r.distance_km,
+                r.duration_min,
+                COALESCE(
+                    r.avg_speed_kmh,
+                    CASE
+                        WHEN r.duration_min > 0 THEN ROUND((r.distance_km / r.duration_min) * 60.0, 2)
+                        ELSE 0
+                    END
+                ) AS avg_speed_kmh
             FROM rides r
             JOIN users u ON r.user_id = u.id
             WHERE date(r.created_at) = ?
-            GROUP BY date(r.created_at), r.user_id, u.gender
         )
         SELECT
-            strftime('%d.%m.%Y', dt.ride_day) AS day,
-            dt.user_id,
-            dt.gender,
-            dt.distance_km,
-            dt.duration_min,
-            dt.avg_speed_kmh,
+            strftime('%d.%m.%Y', dr.ride_day) AS day,
+            dr.user_id,
+            dr.gender,
+            ROUND(dr.distance_km, 2) AS distance_km,
+            ROUND(dr.duration_min, 2) AS duration_min,
+            dr.avg_speed_kmh,
             u.name AS user_name,
             u.profile_image AS profile_image
-        FROM daily_totals dt
-        JOIN users u ON dt.user_id = u.id
+        FROM daily_rides dr
+        JOIN users u ON dr.user_id = u.id
         WHERE NOT EXISTS (
             SELECT 1
-            FROM daily_totals better
-            WHERE better.ride_day = dt.ride_day
-                            AND better.gender = dt.gender
+            FROM daily_rides better
+            WHERE better.ride_day = dr.ride_day
+              AND better.gender = dr.gender
               AND (
-                  better.avg_speed_kmh > dt.avg_speed_kmh
+                  better.avg_speed_kmh > dr.avg_speed_kmh
                   OR (
-                      better.avg_speed_kmh = dt.avg_speed_kmh
-                      AND better.distance_km > dt.distance_km
+                      better.avg_speed_kmh = dr.avg_speed_kmh
+                      AND better.distance_km > dr.distance_km
                   )
                   OR (
-                      better.avg_speed_kmh = dt.avg_speed_kmh
-                      AND better.distance_km = dt.distance_km
-                      AND better.user_id < dt.user_id
+                      better.avg_speed_kmh = dr.avg_speed_kmh
+                      AND better.distance_km = dr.distance_km
+                      AND better.user_id < dr.user_id
+                  )
+                  OR (
+                      better.avg_speed_kmh = dr.avg_speed_kmh
+                      AND better.distance_km = dr.distance_km
+                      AND better.user_id = dr.user_id
+                      AND better.ride_id < dr.ride_id
                   )
               )
         )
-        ORDER BY dt.ride_day DESC, dt.gender ASC
+        ORDER BY dr.ride_day DESC, dr.gender ASC
         """
     , (current_date_iso,)).fetchall()
     daily_winners = [row for row in daily_winners_today if row["gender"] == selected_gender]
@@ -847,51 +856,60 @@ def index():
 
     daily_winners_all = conn.execute(
         """
-        WITH daily_totals AS (
+        WITH daily_rides AS (
             SELECT
+                r.id AS ride_id,
                 date(r.created_at) AS ride_day,
                 r.user_id,
                 u.gender,
-                ROUND(SUM(r.distance_km), 2) AS distance_km,
-                ROUND(SUM(r.duration_min), 2) AS duration_min,
-                CASE
-                    WHEN SUM(r.duration_min) > 0 THEN ROUND((SUM(r.distance_km) / SUM(r.duration_min)) * 60.0, 2)
-                    ELSE 0
-                END AS avg_speed_kmh
+                r.distance_km,
+                r.duration_min,
+                COALESCE(
+                    r.avg_speed_kmh,
+                    CASE
+                        WHEN r.duration_min > 0 THEN ROUND((r.distance_km / r.duration_min) * 60.0, 2)
+                        ELSE 0
+                    END
+                ) AS avg_speed_kmh
             FROM rides r
             JOIN users u ON r.user_id = u.id
-            GROUP BY date(r.created_at), r.user_id, u.gender
         )
         SELECT
-            strftime('%d.%m.%Y', dt.ride_day) AS day,
-            dt.user_id,
-            dt.gender,
-            dt.distance_km,
-            dt.duration_min,
-            dt.avg_speed_kmh,
+            strftime('%d.%m.%Y', dr.ride_day) AS day,
+            dr.user_id,
+            dr.gender,
+            ROUND(dr.distance_km, 2) AS distance_km,
+            ROUND(dr.duration_min, 2) AS duration_min,
+            dr.avg_speed_kmh,
             u.name AS user_name,
             u.profile_image AS profile_image
-        FROM daily_totals dt
-        JOIN users u ON dt.user_id = u.id
+        FROM daily_rides dr
+        JOIN users u ON dr.user_id = u.id
         WHERE NOT EXISTS (
             SELECT 1
-            FROM daily_totals better
-            WHERE better.ride_day = dt.ride_day
-                            AND better.gender = dt.gender
+            FROM daily_rides better
+            WHERE better.ride_day = dr.ride_day
+              AND better.gender = dr.gender
               AND (
-                  better.avg_speed_kmh > dt.avg_speed_kmh
+                  better.avg_speed_kmh > dr.avg_speed_kmh
                   OR (
-                      better.avg_speed_kmh = dt.avg_speed_kmh
-                      AND better.distance_km > dt.distance_km
+                      better.avg_speed_kmh = dr.avg_speed_kmh
+                      AND better.distance_km > dr.distance_km
                   )
                   OR (
-                      better.avg_speed_kmh = dt.avg_speed_kmh
-                      AND better.distance_km = dt.distance_km
-                      AND better.user_id < dt.user_id
+                      better.avg_speed_kmh = dr.avg_speed_kmh
+                      AND better.distance_km = dr.distance_km
+                      AND better.user_id < dr.user_id
+                  )
+                  OR (
+                      better.avg_speed_kmh = dr.avg_speed_kmh
+                      AND better.distance_km = dr.distance_km
+                      AND better.user_id = dr.user_id
+                      AND better.ride_id < dr.ride_id
                   )
               )
         )
-        ORDER BY dt.ride_day DESC, dt.gender ASC
+        ORDER BY dr.ride_day DESC, dr.gender ASC
         """
     ).fetchall()
     stage_days = []

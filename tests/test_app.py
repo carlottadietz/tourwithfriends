@@ -463,6 +463,122 @@ class TourWithFriendsTests(unittest.TestCase):
         self.assertAlmostEqual(totals[0], 55.0, places=2)
         self.assertAlmostEqual(totals[1], 124.4, places=2)
 
+    def test_stage_winner_uses_highest_single_speed_with_multiple_same_day_rides(self):
+        app.config["CURRENT_TIME_OVERRIDE"] = datetime(2026, 7, 10, 10, 0, 0)
+
+        self.client.post(
+            "/login",
+            data={"name": "Anna", "gender": "Femme", "profile_image": (BytesIO(b"fake-image-data"), "anna.png")},
+            content_type="multipart/form-data",
+            follow_redirects=True,
+        )
+        self.client.post(
+            "/rides/manual",
+            data={
+                "ride_date": "2026-07-10",
+                "distance_km": "60.0",
+                "avg_speed_kmh": "20.0",
+                "elevation_m": "300.0",
+                "duration_hours": "3",
+                "duration_minutes": "0",
+                "duration_seconds": "0",
+            },
+            follow_redirects=True,
+        )
+        self.client.post(
+            "/rides/manual",
+            data={
+                "ride_date": "2026-07-10",
+                "distance_km": "10.0",
+                "avg_speed_kmh": "35.0",
+                "elevation_m": "90.0",
+                "duration_hours": "0",
+                "duration_minutes": "17",
+                "duration_seconds": "9",
+            },
+            follow_redirects=True,
+        )
+
+        self.client.post(
+            "/login",
+            data={"name": "Bea", "gender": "Femme", "profile_image": (BytesIO(b"fake-image-data"), "bea.png")},
+            content_type="multipart/form-data",
+            follow_redirects=True,
+        )
+        self.client.post(
+            "/rides/manual",
+            data={
+                "ride_date": "2026-07-10",
+                "distance_km": "30.0",
+                "avg_speed_kmh": "30.0",
+                "elevation_m": "200.0",
+                "duration_hours": "1",
+                "duration_minutes": "0",
+                "duration_seconds": "0",
+            },
+            follow_redirects=True,
+        )
+
+        response = self.client.get("/", follow_redirects=True)
+        html = response.data.decode("utf-8")
+        stage_block = html.split("Etappensieger des Tages", 1)[1].split("Trikotwertung", 1)[0]
+
+        self.assertIn("10.07.2026", stage_block)
+        self.assertIn("Anna", stage_block)
+        self.assertIn("35.0 km/h", stage_block)
+        self.assertNotIn("Bea", stage_block)
+
+    def test_stage_winner_is_based_on_ride_day_not_upload_day(self):
+        app.config["CURRENT_TIME_OVERRIDE"] = datetime(2026, 7, 11, 10, 0, 0)
+
+        self.client.post(
+            "/login",
+            data={"name": "Anna", "gender": "Femme", "profile_image": (BytesIO(b"fake-image-data"), "anna.png")},
+            content_type="multipart/form-data",
+            follow_redirects=True,
+        )
+        self.client.post(
+            "/rides/manual",
+            data={
+                "ride_date": "2026-07-10",
+                "distance_km": "40.0",
+                "avg_speed_kmh": "32.0",
+                "elevation_m": "210.0",
+                "duration_hours": "1",
+                "duration_minutes": "15",
+                "duration_seconds": "0",
+            },
+            follow_redirects=True,
+        )
+
+        self.client.post(
+            "/login",
+            data={"name": "Bea", "gender": "Femme", "profile_image": (BytesIO(b"fake-image-data"), "bea.png")},
+            content_type="multipart/form-data",
+            follow_redirects=True,
+        )
+        self.client.post(
+            "/rides/manual",
+            data={
+                "ride_date": "2026-07-10",
+                "distance_km": "45.0",
+                "avg_speed_kmh": "29.0",
+                "elevation_m": "180.0",
+                "duration_hours": "1",
+                "duration_minutes": "33",
+                "duration_seconds": "6",
+            },
+            follow_redirects=True,
+        )
+
+        response = self.client.get("/", follow_redirects=True)
+        html = response.data.decode("utf-8")
+        stage_days_block = html.split("Etappensieger je Tag", 1)[1]
+
+        self.assertIn("10.07.2026", stage_days_block)
+        self.assertIn("Anna · 40.0 km · 32.0 km/h", stage_days_block)
+        self.assertNotIn("Bea · 45.0 km · 29.0 km/h", stage_days_block)
+
     def test_stage_winner_box_remains_empty_when_no_ride_today(self):
         app.config["CURRENT_TIME_OVERRIDE"] = datetime(2026, 7, 5, 10, 0, 0)
         self.client.post(
