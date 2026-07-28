@@ -126,6 +126,87 @@ class TourWithFriendsTests(unittest.TestCase):
         self.assertIn(b"Support f\xc3\xbcr Tour with Friends", response.data)
         self.assertIn(b"Gesammelte Support-Anfragen", response.data)
 
+    def test_ceremony_dashboard_requires_login(self):
+        response = self.client.get("/ceremony", follow_redirects=False)
+
+        self.assertEqual(response.status_code, 302)
+        self.assertIn("/", response.headers.get("Location", ""))
+
+    def test_ceremony_dashboard_shows_podium_overtakes_and_stage_wins(self):
+        app.config["CURRENT_TIME_OVERRIDE"] = datetime(2026, 7, 10, 10, 0, 0)
+
+        self.client.post(
+            "/login",
+            data={"name": "Anna", "gender": "Femme", "profile_image": (BytesIO(b"fake-image-data"), "anna.png")},
+            content_type="multipart/form-data",
+            follow_redirects=True,
+        )
+        self.client.post(
+            "/rides/manual",
+            data={
+                "ride_date": "2026-07-05",
+                "distance_km": "10.0",
+                "avg_speed_kmh": "20.0",
+                "elevation_m": "80.0",
+                "duration_hours": "0",
+                "duration_minutes": "30",
+                "duration_seconds": "0",
+            },
+            follow_redirects=True,
+        )
+
+        self.client.post(
+            "/login",
+            data={"name": "Bea", "gender": "Femme", "profile_image": (BytesIO(b"fake-image-data"), "bea.png")},
+            content_type="multipart/form-data",
+            follow_redirects=True,
+        )
+        self.client.post(
+            "/rides/manual",
+            data={
+                "ride_date": "2026-07-05",
+                "distance_km": "12.0",
+                "avg_speed_kmh": "24.0",
+                "elevation_m": "100.0",
+                "duration_hours": "0",
+                "duration_minutes": "30",
+                "duration_seconds": "0",
+            },
+            follow_redirects=True,
+        )
+
+        self.client.post(
+            "/login",
+            data={"name": "Chris", "gender": "Homme", "profile_image": (BytesIO(b"fake-image-data"), "chris.png")},
+            content_type="multipart/form-data",
+            follow_redirects=True,
+        )
+        self.client.post(
+            "/rides/manual",
+            data={
+                "ride_date": "2026-07-05",
+                "distance_km": "8.0",
+                "avg_speed_kmh": "16.0",
+                "elevation_m": "60.0",
+                "duration_hours": "0",
+                "duration_minutes": "30",
+                "duration_seconds": "0",
+            },
+            follow_redirects=True,
+        )
+
+        response = self.client.get("/ceremony", follow_redirects=True)
+
+        self.assertEqual(response.status_code, 200)
+        self.assertIn(b"Siegerehrung Dashboard", response.data)
+        self.assertIn(b"Top 3 pro Kategorie", response.data)
+        self.assertIn(b"Bea", response.data)
+        self.assertIn(b"Anna", response.data)
+        self.assertIn(b"Chris", response.data)
+        self.assertIn(b"ueberholt", response.data)
+        self.assertIn(b"Meiste Etappensiege des Tages", response.data)
+        self.assertIn(b"1 Etappensiege", response.data)
+
     def test_support_form_creates_request(self):
         response = self.client.post(
             "/support",

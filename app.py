@@ -522,6 +522,305 @@ def parse_duration_minutes(hours_text, minutes_text, seconds_text):
         raise ValueError("Duration values must be non-negative")
     return round(hours * 60 + minutes + (seconds / 60.0), 2)
 
+
+def get_ceremony_category_definitions():
+    return [
+        {
+            "key": "yellow",
+            "title": "Gelbes Trikot",
+            "unit": "km/h",
+            "description": "Hoester Gesamtschnitt",
+        },
+        {
+            "key": "white",
+            "title": "Weisses Trikot",
+            "unit": "km",
+            "description": "Meiste Kilometer",
+        },
+        {
+            "key": "polka",
+            "title": "Punkte Trikot",
+            "unit": "m",
+            "description": "Meiste Hoehenmeter",
+        },
+        {
+            "key": "green",
+            "title": "Gruenes Trikot",
+            "unit": "min",
+            "description": "Meiste Fahrzeit",
+        },
+    ]
+
+
+def get_ranking_value_for_category(category_key, totals):
+    if category_key == "yellow":
+        return calculate_average_speed(totals["distance_km"], totals["duration_min"])
+    if category_key == "white":
+        return round(totals["distance_km"], 2)
+    if category_key == "polka":
+        return round(totals["elevation_m"], 2)
+    if category_key == "green":
+        return round(totals["duration_min"], 2)
+    return 0.0
+
+
+def sort_users_for_category(users_meta, totals_by_user, category_key):
+    def sort_key(user_meta):
+        totals = totals_by_user[user_meta["id"]]
+        if category_key == "yellow":
+            return (
+                -get_ranking_value_for_category(category_key, totals),
+                -totals["distance_km"],
+                user_meta["name"].lower(),
+                user_meta["id"],
+            )
+
+        return (
+            -get_ranking_value_for_category(category_key, totals),
+            user_meta["name"].lower(),
+            user_meta["id"],
+        )
+
+    return sorted(users_meta, key=sort_key)
+
+
+def build_ceremony_top_three(conn):
+    users = conn.execute(
+        """
+        SELECT
+            id,
+            name,
+            gender,
+            profile_image,
+            total_distance_km,
+            total_elevation_m,
+            total_duration_min
+        FROM users
+        ORDER BY name ASC
+        """
+    ).fetchall()
+
+    categories = []
+    for definition in get_ceremony_category_definitions():
+        key = definition["key"]
+        if key == "yellow":
+            ranked = sorted(
+                users,
+                key=lambda row: (
+                    -(round((row["total_distance_km"] / row["total_duration_min"]) * 60.0, 2) if row["total_duration_min"] > 0 else 0.0),
+                    -row["total_distance_km"],
+                    row["name"].lower(),
+                    row["id"],
+                ),
+            )
+        elif key == "white":
+            ranked = sorted(users, key=lambda row: (-row["total_distance_km"], row["name"].lower(), row["id"]))
+        elif key == "polka":
+            ranked = sorted(users, key=lambda row: (-row["total_elevation_m"], row["name"].lower(), row["id"]))
+        else:
+            ranked = sorted(users, key=lambda row: (-row["total_duration_min"], row["name"].lower(), row["id"]))
+
+        podium = []
+        for position, row in enumerate(ranked[:3], start=1):
+            totals = {
+                "distance_km": row["total_distance_km"],
+                "elevation_m": row["total_elevation_m"],
+                "duration_min": row["total_duration_min"],
+            }
+            podium.append(
+                {
+                    "position": position,
+                    "user_id": row["id"],
+                    "name": row["name"],
+                    "gender": row["gender"],
+                    "profile_image": row["profile_image"],
+                    "value": get_ranking_value_for_category(key, totals),
+                }
+            )
+
+        categories.append(
+            {
+                "key": key,
+                "title": definition["title"],
+                "unit": definition["unit"],
+                "description": definition["description"],
+                "podium": podium,
+            }
+        )
+
+    return categories
+
+
+def build_category_overtake_history(conn, max_events_per_category=20):
+    users_meta = conn.execute(
+        "SELECT id, name FROM users ORDER BY id ASC"
+    ).fetchall()
+    if not users_meta:
+        return []
+
+    user_name_by_id = {row["id"]: row["name"] for row in users_meta}
+    totals_by_user = {
+        row["id"]: {
+            "distance_km": 0.0,
+            "elevation_m": 0.0,
+            "duration_min": 0.0,
+        }
+        for row in users_meta
+    }
+
+    categories = get_ceremony_category_definitions()
+    previous_orders = {
+        category["key"]: [row["id"] for row in sort_users_for_category(users_meta, totals_by_user, category["key"])]
+        for category in categories
+    }
+    events_by_category = {category["key"]: [] for category in categories}
+
+    rides = conn.execute(
+        """
+        SELECT
+            r.id,
+            r.user_id,
+            r.distance_km,
+            r.elevation_m,
+            r.duration_min,
+            r.created_at
+        FROM rides r
+        ORDER BY datetime(r.created_at) ASC, r.id ASC
+        """
+    ).fetchall()
+
+    for ride in rides:
+        user_totals = totals_by_user.get(ride["user_id"])
+        if user_totals is None:
+            continue
+
+        user_totals["distance_km"] += ride["distance_km"]
+        user_totals["elevation_m"] += ride["elevation_m"]
+        user_totals["duration_min"] += ride["duration_min"]
+
+        try:
+            event_dt = datetime.fromisoformat(str(ride["created_at"]).replace("Z", "+00:00"))
+            event_time = event_dt.strftime("%d.%m.%Y %H:%M")
+        except ValueError:
+            event_time = str(ride["created_at"])
+
+        for category in categories:
+            category_key = category["key"]
+            new_order = [row["id"] for row in sort_users_for_category(users_meta, totals_by_user, category_key)]
+            previous_order = previous_orders[category_key]
+
+            previous_pos = {user_id: idx for idx, user_id in enumerate(previous_order)}
+            new_pos = {user_id: idx for idx, user_id in enumerate(new_order)}
+
+            for overtaker_id in new_order:
+                for overtaken_id in new_order:
+                    if overtaker_id == overtaken_id:
+                        continue
+
+                    was_behind = previous_pos[overtaker_id] > previous_pos[overtaken_id]
+                    is_now_ahead = new_pos[overtaker_id] < new_pos[overtaken_id]
+                    touches_podium = (
+                        previous_pos[overtaker_id] < 3
+                        or previous_pos[overtaken_id] < 3
+                        or new_pos[overtaker_id] < 3
+                        or new_pos[overtaken_id] < 3
+                    )
+                    if not (was_behind and is_now_ahead and touches_podium):
+                        continue
+
+                    current_value = get_ranking_value_for_category(category_key, totals_by_user[overtaker_id])
+                    events_by_category[category_key].append(
+                        {
+                            "time": event_time,
+                            "overtaker": user_name_by_id[overtaker_id],
+                            "overtaken": user_name_by_id[overtaken_id],
+                            "from_rank": previous_pos[overtaker_id] + 1,
+                            "to_rank": new_pos[overtaker_id] + 1,
+                            "value": current_value,
+                        }
+                    )
+
+            previous_orders[category_key] = new_order
+
+    history = []
+    for category in categories:
+        key = category["key"]
+        history.append(
+            {
+                "key": key,
+                "title": category["title"],
+                "unit": category["unit"],
+                "events": events_by_category[key][-max_events_per_category:],
+            }
+        )
+
+    return history
+
+
+def build_stage_wins_leaderboard(conn):
+    return conn.execute(
+        """
+        WITH daily_rides AS (
+            SELECT
+                r.id AS ride_id,
+                date(r.created_at) AS ride_day,
+                r.user_id,
+                u.gender,
+                r.distance_km,
+                COALESCE(
+                    r.avg_speed_kmh,
+                    CASE
+                        WHEN r.duration_min > 0 THEN ROUND((r.distance_km / r.duration_min) * 60.0, 2)
+                        ELSE 0
+                    END
+                ) AS avg_speed_kmh
+            FROM rides r
+            JOIN users u ON r.user_id = u.id
+        ),
+        day_winners AS (
+            SELECT
+                dr.ride_day,
+                dr.gender,
+                dr.user_id
+            FROM daily_rides dr
+            WHERE NOT EXISTS (
+                SELECT 1
+                FROM daily_rides better
+                WHERE better.ride_day = dr.ride_day
+                  AND better.gender = dr.gender
+                  AND (
+                      better.avg_speed_kmh > dr.avg_speed_kmh
+                      OR (
+                          better.avg_speed_kmh = dr.avg_speed_kmh
+                          AND better.distance_km > dr.distance_km
+                      )
+                      OR (
+                          better.avg_speed_kmh = dr.avg_speed_kmh
+                          AND better.distance_km = dr.distance_km
+                          AND better.user_id < dr.user_id
+                      )
+                      OR (
+                          better.avg_speed_kmh = dr.avg_speed_kmh
+                          AND better.distance_km = dr.distance_km
+                          AND better.user_id = dr.user_id
+                          AND better.ride_id < dr.ride_id
+                      )
+                  )
+            )
+        )
+        SELECT
+            u.id,
+            u.name,
+            u.gender,
+            u.profile_image,
+            COUNT(*) AS stage_wins
+        FROM day_winners dw
+        JOIN users u ON u.id = dw.user_id
+        GROUP BY u.id, u.name, u.gender, u.profile_image
+        ORDER BY stage_wins DESC, u.name ASC
+        """
+    ).fetchall()
+
 def parse_gpx_metrics(path):
     tree = ET.parse(path)
     root = tree.getroot()
@@ -987,6 +1286,26 @@ def index():
         manual_ride_date_value=manual_ride_date_value,
         manual_ride_min_date=tour_start_date.isoformat(),
         manual_ride_max_date=tour_end_date.isoformat(),
+    )
+
+
+@app.route("/ceremony")
+def ceremony_dashboard():
+    user = get_current_user()
+    if not user:
+        return redirect(url_for("index"))
+
+    conn = get_db()
+    ceremony_categories = build_ceremony_top_three(conn)
+    ceremony_overtakes = build_category_overtake_history(conn)
+    stage_wins_leaderboard = build_stage_wins_leaderboard(conn)
+
+    return render_template(
+        "ceremony.html",
+        user=user,
+        ceremony_categories=ceremony_categories,
+        ceremony_overtakes=ceremony_overtakes,
+        stage_wins_leaderboard=stage_wins_leaderboard,
     )
 
 

@@ -1,0 +1,295 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Siegerehrung Dashboard</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;700;800&family=Inter:wght@400;500;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://unpkg.com/modern-css-reset/dist/reset.min.css">
+  <style>
+    :root {
+      --ink: #0f172a;
+      --card: #ffffff;
+      --line: rgba(148, 163, 184, 0.32);
+      --bg: radial-gradient(circle at 12% 10%, #fff8cc 0%, #f8fafc 36%, #e2e8f0 100%);
+      --gold: #facc15;
+      --silver: #cbd5e1;
+      --bronze: #fdba74;
+    }
+
+    body {
+      margin: 0;
+      padding: 24px;
+      font-family: Inter, system-ui, sans-serif;
+      color: var(--ink);
+      background: var(--bg);
+      min-height: 100vh;
+    }
+
+    .page {
+      max-width: 1180px;
+      margin: 0 auto;
+      display: grid;
+      gap: 18px;
+    }
+
+    .card {
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 24px;
+      padding: 20px;
+      box-shadow: 0 20px 45px rgba(15, 23, 42, 0.08);
+    }
+
+    .hero {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    h1 {
+      margin: 0;
+      font-family: "Barlow Condensed", Inter, sans-serif;
+      font-size: clamp(2rem, 4vw, 3.2rem);
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+    }
+
+    h2 {
+      margin: 0;
+      font-size: 1.35rem;
+    }
+
+    p {
+      margin: 6px 0 0;
+      color: #334155;
+    }
+
+    .button-row {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .button-link {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      text-decoration: none;
+      border-radius: 12px;
+      border: 1px solid var(--line);
+      background: #f8fafc;
+      color: var(--ink);
+      padding: 10px 14px;
+      font-weight: 700;
+    }
+
+    .podium-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 14px;
+    }
+
+    .podium-card {
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      padding: 14px;
+      background: linear-gradient(160deg, #ffffff, #f8fafc);
+      display: grid;
+      gap: 10px;
+    }
+
+    .podium-card ol {
+      margin: 0;
+      padding-left: 0;
+      list-style: none;
+      display: grid;
+      gap: 8px;
+    }
+
+    .podium-card li {
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 10px;
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+      align-items: center;
+      background: #fff;
+    }
+
+    .podium-left {
+      display: inline-flex;
+      gap: 8px;
+      align-items: center;
+      min-width: 0;
+    }
+
+    .place-chip {
+      width: 28px;
+      height: 28px;
+      border-radius: 999px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.85rem;
+      font-weight: 800;
+      border: 1px solid var(--line);
+      flex: 0 0 auto;
+    }
+
+    .place-chip.p1 { background: var(--gold); }
+    .place-chip.p2 { background: var(--silver); }
+    .place-chip.p3 { background: var(--bronze); }
+
+    .name-block {
+      display: grid;
+      min-width: 0;
+    }
+
+    .name-block strong {
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .muted {
+      color: #64748b;
+      font-size: 0.88rem;
+    }
+
+    .value {
+      font-weight: 800;
+      white-space: nowrap;
+    }
+
+    .history-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 14px;
+    }
+
+    .history-card {
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      padding: 14px;
+      background: #fff;
+    }
+
+    .history-card ul {
+      margin: 10px 0 0;
+      padding-left: 18px;
+      display: grid;
+      gap: 8px;
+      color: #1e293b;
+    }
+
+    .stage-list {
+      margin: 0;
+      padding-left: 0;
+      list-style: none;
+      display: grid;
+      gap: 8px;
+    }
+
+    .stage-list li {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+      padding: 10px;
+      border-radius: 12px;
+      border: 1px solid var(--line);
+      background: #fff;
+    }
+
+    @media (max-width: 900px) {
+      .podium-grid,
+      .history-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <section class="card hero">
+      <div>
+        <h1>Siegerehrung Dashboard</h1>
+        <p>Top 3 je Kategorie, Ueberholungen im Ranking und die meisten Etappensiege des Tages.</p>
+      </div>
+      <div class="button-row">
+        <a class="button-link" href="{{ url_for('index') }}">Zurueck zum Dashboard</a>
+        <a class="button-link" href="{{ url_for('support') }}">Support</a>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>Top 3 pro Kategorie</h2>
+      <div class="podium-grid">
+        {% for category in ceremony_categories %}
+          <article class="podium-card">
+            <div>
+              <strong>{{ category.title }}</strong>
+              <p>{{ category.description }}</p>
+            </div>
+            <ol>
+              {% for entry in category.podium %}
+                <li>
+                  <span class="podium-left">
+                    <span class="place-chip {{ 'p1' if entry.position == 1 else 'p2' if entry.position == 2 else 'p3' }}">{{ entry.position }}</span>
+                    <span class="name-block">
+                      <strong>{{ entry.name }}</strong>
+                      <span class="muted">{{ entry.gender }}</span>
+                    </span>
+                  </span>
+                  <span class="value">{{ entry.value|round(2) }} {{ category.unit }}</span>
+                </li>
+              {% else %}
+                <li><span class="muted">Noch keine Eintraege.</span></li>
+              {% endfor %}
+            </ol>
+          </article>
+        {% endfor %}
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>Wann hat wer wen ueberholt?</h2>
+      <p>Chronik der letzten Fuehrungswechsel im Podiumsbereich je Kategorie.</p>
+      <div class="history-grid">
+        {% for category in ceremony_overtakes %}
+          <article class="history-card">
+            <strong>{{ category.title }}</strong>
+            <ul>
+              {% for event in category.events %}
+                <li>{{ event.time }}: {{ event.overtaker }} ueberholt {{ event.overtaken }} (von Platz {{ event.from_rank }} auf {{ event.to_rank }}) mit {{ event.value|round(2) }} {{ category.unit }}</li>
+              {% else %}
+                <li><span class="muted">Noch keine Ueberholungen im Podiumsbereich.</span></li>
+              {% endfor %}
+            </ul>
+          </article>
+        {% endfor %}
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>Meiste Etappensiege des Tages</h2>
+      <ul class="stage-list">
+        {% for entry in stage_wins_leaderboard %}
+          <li>
+            <span><strong>{{ loop.index }}. {{ entry.name }}</strong> <span class="muted">{{ entry.gender }}</span></span>
+            <strong>{{ entry.stage_wins }} Etappensiege</strong>
+          </li>
+        {% else %}
+          <li><span class="muted">Noch keine Etappensiege vorhanden.</span></li>
+        {% endfor %}
+      </ul>
+    </section>
+  </div>
+</body>
+</html>
