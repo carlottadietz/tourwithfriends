@@ -338,6 +338,23 @@
       align-items: center;
     }
 
+    .chart-actions {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .chart-expand {
+      border: 1px solid rgba(148, 163, 184, 0.4);
+      border-radius: 10px;
+      background: #ffffff;
+      color: #0f172a;
+      font-weight: 700;
+      font-size: 0.82rem;
+      padding: 6px 10px;
+      cursor: pointer;
+    }
+
     .axis-note {
       font-size: 0.78rem;
       color: #475569;
@@ -376,15 +393,32 @@
 
     .chart-line {
       fill: none;
-      stroke-width: 1.6;
-      opacity: 0.92;
+      stroke-width: 2.2;
+      opacity: 0.2;
       stroke-linejoin: round;
       stroke-linecap: round;
+      transition: opacity 140ms ease, stroke-width 140ms ease;
     }
 
     .chart-point {
       stroke: #ffffff;
-      stroke-width: 0.5;
+      stroke-width: 0.7;
+      opacity: 0.2;
+      transition: opacity 140ms ease, r 140ms ease;
+    }
+
+    .chart-line.is-active {
+      opacity: 1;
+      stroke-width: 3.4;
+    }
+
+    .chart-point.is-active {
+      opacity: 1;
+    }
+
+    .chart-series.is-dim .chart-line,
+    .chart-series.is-dim .chart-point {
+      opacity: 0.14;
     }
 
     .chart-axis {
@@ -427,6 +461,22 @@
       padding: 6px 8px;
     }
 
+    .legend-list button {
+      all: unset;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      width: 100%;
+      cursor: pointer;
+    }
+
+    .legend-list li.is-active {
+      border-color: rgba(15, 23, 42, 0.42);
+      box-shadow: inset 0 0 0 1px rgba(15, 23, 42, 0.08);
+      background: #ffffff;
+    }
+
     .legend-main {
       display: inline-flex;
       align-items: center;
@@ -447,43 +497,54 @@
       text-overflow: ellipsis;
     }
 
-    .change-dialog {
-      width: min(680px, calc(100vw - 24px));
+    .chart-dialog {
+      width: min(1320px, calc(100vw - 26px));
       border: none;
-      border-radius: 20px;
+      border-radius: 18px;
       padding: 0;
-      box-shadow: 0 30px 80px rgba(15, 23, 42, 0.3);
+      background: #ffffff;
+      box-shadow: 0 30px 80px rgba(15, 23, 42, 0.35);
     }
 
-    .change-dialog::backdrop {
-      background: rgba(15, 23, 42, 0.6);
+    .chart-dialog::backdrop {
+      background: rgba(15, 23, 42, 0.7);
     }
 
-    .change-dialog-content {
-      padding: 18px;
+    .chart-dialog-content {
       display: grid;
       gap: 12px;
-      max-height: calc(100vh - 40px);
+      padding: 16px;
+      max-height: calc(100vh - 24px);
       overflow: auto;
     }
 
-    .change-dialog-head {
+    .chart-dialog-head {
       display: flex;
+      align-items: center;
       justify-content: space-between;
-      align-items: start;
-      gap: 8px;
+      gap: 10px;
     }
 
-    .change-dialog-head h2 {
+    .chart-dialog-head h3 {
       margin: 0;
+      font-size: 1.35rem;
     }
 
-    .change-list {
-      margin: 0;
-      padding-left: 18px;
-      color: #1e293b;
+    .chart-dialog-stage {
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: #f8fafc;
+      padding: 10px;
       display: grid;
-      gap: 8px;
+      gap: 10px;
+    }
+
+    .chart-dialog-stage .chart-canvas {
+      min-width: max(1080px, calc(var(--day-count) * 76px));
+    }
+
+    .chart-dialog-stage .chart-svg {
+      height: 560px;
     }
 
     .stage-grid {
@@ -532,6 +593,14 @@
       .chart-canvas {
         min-width: max(680px, calc(var(--day-count) * 64px));
       }
+
+      .chart-dialog-stage .chart-canvas {
+        min-width: max(760px, calc(var(--day-count) * 64px));
+      }
+
+      .chart-dialog-stage .chart-svg {
+        height: 460px;
+      }
     }
   </style>
 </head>
@@ -543,28 +612,10 @@
         <p>Top 3 je Kategorie, Überholungen im Ranking und die meisten Etappensiege des Tages.</p>
       </div>
       <div class="button-row">
-        <button id="open-changes" class="button-link" type="button">Änderungen anzeigen</button>
         <a class="button-link" href="{{ url_for('index') }}">Zurück zum Dashboard</a>
         <a class="button-link" href="{{ url_for('support') }}">Support</a>
       </div>
     </section>
-
-    <dialog id="changes-dialog" class="change-dialog">
-      <div class="change-dialog-content">
-        <div class="change-dialog-head">
-          <h2>Neue Änderungen im Siegerehrungs-Dashboard</h2>
-          <button id="close-changes" class="button-link" type="button">Schließen</button>
-        </div>
-        <ul class="change-list">
-          <li>Top 3 je Kategorie haben jetzt eine eigene Taskleiste zum Durchklicken.</li>
-          <li>Pro Geschlecht ist bei den Top 3 immer nur ein Platz gleichzeitig sichtbar.</li>
-          <li>Profilbilder, Namen und Platzierungen im Podium sind deutlich größer dargestellt.</li>
-          <li>Liniengraphen sind größer und zeigen alle Tage auf der X-Achse vollständig an.</li>
-          <li>Die Y-Achse zeigt je Kategorie km, Höhenmeter, Zeit oder km/h.</li>
-          <li>Etappensiege sind auf Top 3 pro Geschlecht begrenzt.</li>
-        </ul>
-      </div>
-    </dialog>
 
     <section class="card">
       <h2>Top 3 pro Kategorie</h2>
@@ -649,12 +700,15 @@
                 <section class="chart-card">
                   <div class="chart-head">
                     <span class="gender-title">{{ gender }}</span>
-                    <span class="axis-note">Y: {{ category.unit }} · X: Tage</span>
+                    <span class="chart-actions">
+                      <span class="axis-note">Y: {{ category.unit }} · X: Tage</span>
+                      <button class="chart-expand" type="button" data-chart-expand>Vergrößern</button>
+                    </span>
                   </div>
                   {% set chart = category.charts_by_gender[gender] %}
                   {% if chart.series %}
                     <div class="chart-scroll">
-                      <div class="chart-canvas" style="--day-count: {{ chart.days|length }};">
+                      <div class="chart-canvas" style="--day-count: {{ chart.days|length }};" data-chart-canvas>
                         <svg class="chart-svg" viewBox="0 0 100 100" preserveAspectRatio="none" aria-label="{{ category.title }} Verlauf {{ gender }}">
                           <g class="chart-grid">
                             <line x1="0" y1="0" x2="100" y2="0"></line>
@@ -672,12 +726,15 @@
                             {% endif %}
                           </g>
                           {% for series in chart.series %}
-                            <polyline class="chart-line" points="{{ series.polyline }}" stroke="{{ series.color }}"></polyline>
-                            {% for point in series.points %}
-                              <circle class="chart-point" cx="{{ point.x_pct }}" cy="{{ point.y_pct }}" r="0.9" fill="{{ series.color }}">
-                                <title>{{ series.name }} · {{ point.day_label }} · {{ point.value|round(2) }} {{ category.unit }}</title>
-                              </circle>
-                            {% endfor %}
+                            {% set is_active_series = loop.first %}
+                            <g class="chart-series" data-series-id="{{ loop.index0 }}">
+                              <polyline class="chart-line{% if is_active_series %} is-active{% endif %}" points="{{ series.polyline }}" stroke="{{ series.color }}"></polyline>
+                              {% for point in series.points %}
+                                <circle class="chart-point{% if is_active_series %} is-active{% endif %}" cx="{{ point.x_pct }}" cy="{{ point.y_pct }}" r="1.05" fill="{{ series.color }}">
+                                  <title>{{ series.name }} · {{ point.day_label }} · {{ point.value|round(2) }} {{ category.unit }}</title>
+                                </circle>
+                              {% endfor %}
+                            </g>
                           {% endfor %}
                         </svg>
                         <div class="chart-axis">
@@ -691,14 +748,16 @@
                         </div>
                       </div>
                     </div>
-                    <ul class="legend-list">
+                    <ul class="legend-list" data-legend>
                       {% for series in chart.series %}
-                        <li>
-                          <span class="legend-main">
-                            <span class="legend-dot" style="background: {{ series.color }};"></span>
-                            <span class="legend-name">{{ series.name }}</span>
-                          </span>
-                          <strong>{{ series.latest_value|round(2) }} {{ category.unit }}</strong>
+                        <li class="{% if loop.first %}is-active{% endif %}" data-legend-item="{{ loop.index0 }}">
+                          <button type="button" data-legend-button="{{ loop.index0 }}">
+                            <span class="legend-main">
+                              <span class="legend-dot" style="background: {{ series.color }};"></span>
+                              <span class="legend-name">{{ series.name }}</span>
+                            </span>
+                            <strong>{{ series.latest_value|round(2) }} {{ category.unit }}</strong>
+                          </button>
                         </li>
                       {% endfor %}
                     </ul>
@@ -735,42 +794,29 @@
     </section>
   </div>
 
+  <dialog id="chart-dialog" class="chart-dialog">
+    <div class="chart-dialog-content">
+      <div class="chart-dialog-head">
+        <h3 id="chart-dialog-title">Vergrößerte Ansicht</h3>
+        <button id="chart-dialog-close" class="button-link" type="button">Schließen</button>
+      </div>
+      <div class="chart-scroll">
+        <div id="chart-dialog-stage" class="chart-dialog-stage"></div>
+      </div>
+    </div>
+  </dialog>
+
   <script>
-    const changeDialog = document.getElementById('changes-dialog');
-    const openChanges = document.getElementById('open-changes');
-    const closeChanges = document.getElementById('close-changes');
     const ceremonyViewers = document.querySelectorAll('[data-ceremony-viewer]');
     const podiumTabs = Array.from(document.querySelectorAll('[data-podium-tab]'));
     const podiumPanels = Array.from(document.querySelectorAll('[data-podium-panel]'));
     const overviewTabs = Array.from(document.querySelectorAll('[data-overview-tab]'));
     const overviewPanels = Array.from(document.querySelectorAll('[data-overview-panel]'));
-
-    if (changeDialog && openChanges && closeChanges) {
-      openChanges.addEventListener('click', () => {
-        if (typeof changeDialog.showModal === 'function') {
-          changeDialog.showModal();
-        } else {
-          changeDialog.setAttribute('open', 'open');
-        }
-      });
-
-      closeChanges.addEventListener('click', () => {
-        if (typeof changeDialog.close === 'function') {
-          changeDialog.close();
-        } else {
-          changeDialog.removeAttribute('open');
-        }
-        sessionStorage.setItem('ceremonyChangesSeenV3', '1');
-      });
-
-      if (!sessionStorage.getItem('ceremonyChangesSeenV3')) {
-        if (typeof changeDialog.showModal === 'function') {
-          changeDialog.showModal();
-        } else {
-          changeDialog.setAttribute('open', 'open');
-        }
-      }
-    }
+    const chartCards = Array.from(document.querySelectorAll('.chart-card'));
+    const chartDialog = document.getElementById('chart-dialog');
+    const chartDialogTitle = document.getElementById('chart-dialog-title');
+    const chartDialogStage = document.getElementById('chart-dialog-stage');
+    const chartDialogClose = document.getElementById('chart-dialog-close');
 
     const activatePodiumCategory = (targetId) => {
       podiumTabs.forEach((tab) => {
@@ -805,6 +851,83 @@
         activateOverview(tab.dataset.target);
       });
     });
+
+    const activateSeries = (chartCard, seriesId) => {
+      const seriesGroups = chartCard.querySelectorAll('.chart-series');
+      const legendItems = chartCard.querySelectorAll('[data-legend-item]');
+      seriesGroups.forEach((seriesGroup) => {
+        const isActive = seriesGroup.dataset.seriesId === seriesId;
+        seriesGroup.classList.toggle('is-dim', !isActive);
+        const line = seriesGroup.querySelector('.chart-line');
+        if (line) {
+          line.classList.toggle('is-active', isActive);
+        }
+        seriesGroup.querySelectorAll('.chart-point').forEach((point) => {
+          point.classList.toggle('is-active', isActive);
+        });
+      });
+      legendItems.forEach((item) => {
+        item.classList.toggle('is-active', item.dataset.legendItem === seriesId);
+      });
+    };
+
+    chartCards.forEach((chartCard) => {
+      const firstLegend = chartCard.querySelector('[data-legend-item]');
+      if (firstLegend) {
+        activateSeries(chartCard, firstLegend.dataset.legendItem);
+      }
+      chartCard.querySelectorAll('[data-legend-button]').forEach((button) => {
+        button.addEventListener('click', () => {
+          activateSeries(chartCard, button.dataset.legendButton);
+        });
+      });
+    });
+
+    const openChartDialog = (chartCard) => {
+      if (!chartDialog || !chartDialogStage || !chartDialogTitle) {
+        return;
+      }
+
+      const panel = chartCard.closest('[data-overview-panel]');
+      const panelTitle = panel ? panel.querySelector('.overview-title strong')?.textContent?.trim() : '';
+      const genderTitle = chartCard.querySelector('.gender-title')?.textContent?.trim() || '';
+      chartDialogTitle.textContent = `${panelTitle} · ${genderTitle}`;
+
+      chartDialogStage.innerHTML = '';
+      const canvas = chartCard.querySelector('[data-chart-canvas]');
+      const legend = chartCard.querySelector('[data-legend]');
+      if (canvas) {
+        chartDialogStage.appendChild(canvas.cloneNode(true));
+      }
+      if (legend) {
+        chartDialogStage.appendChild(legend.cloneNode(true));
+      }
+
+      if (typeof chartDialog.showModal === 'function') {
+        chartDialog.showModal();
+      } else {
+        chartDialog.setAttribute('open', 'open');
+      }
+    };
+
+    chartCards.forEach((chartCard) => {
+      const expandButton = chartCard.querySelector('[data-chart-expand]');
+      if (expandButton) {
+        expandButton.addEventListener('click', () => {
+          openChartDialog(chartCard);
+        });
+      }
+    });
+
+    if (chartDialogClose && chartDialog) {
+      chartDialogClose.addEventListener('click', () => {
+        if (typeof chartDialog.close === 'function') {
+          chartDialog.close();
+        } else {
+          chartDialog.removeAttribute('open');
+        }
+      });
+    }
 
     ceremonyViewers.forEach((viewer) => {
       const slides = Array.from(viewer.querySelectorAll('[data-slide]'));

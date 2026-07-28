@@ -214,10 +214,7 @@ class TourWithFriendsTests(unittest.TestCase):
         self.assertIn(b"Meiste Etappensiege des Tages", response.data)
         self.assertIn(b"Top 3 Femme", response.data)
         self.assertIn(b"Top 3 Homme", response.data)
-        self.assertIn("Änderungen anzeigen".encode("utf-8"), response.data)
-        self.assertIn("Neue Änderungen im Siegerehrungs-Dashboard".encode("utf-8"), response.data)
         self.assertIn("Nächster Platz".encode("utf-8"), response.data)
-        self.assertIn("Taskleiste zum Durchklicken".encode("utf-8"), response.data)
         self.assertIn(b"1 Etappensiege", response.data)
 
     def test_support_form_creates_request(self):
