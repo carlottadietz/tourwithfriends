@@ -603,40 +603,45 @@ def build_ceremony_top_three(conn):
     categories = []
     for definition in get_ceremony_category_definitions():
         key = definition["key"]
-        if key == "yellow":
-            ranked = sorted(
-                users,
-                key=lambda row: (
-                    -(round((row["total_distance_km"] / row["total_duration_min"]) * 60.0, 2) if row["total_duration_min"] > 0 else 0.0),
-                    -row["total_distance_km"],
-                    row["name"].lower(),
-                    row["id"],
-                ),
-            )
-        elif key == "white":
-            ranked = sorted(users, key=lambda row: (-row["total_distance_km"], row["name"].lower(), row["id"]))
-        elif key == "polka":
-            ranked = sorted(users, key=lambda row: (-row["total_elevation_m"], row["name"].lower(), row["id"]))
-        else:
-            ranked = sorted(users, key=lambda row: (-row["total_duration_min"], row["name"].lower(), row["id"]))
 
-        podium = []
-        for position, row in enumerate(ranked[:3], start=1):
-            totals = {
-                "distance_km": row["total_distance_km"],
-                "elevation_m": row["total_elevation_m"],
-                "duration_min": row["total_duration_min"],
-            }
-            podium.append(
-                {
-                    "position": position,
-                    "user_id": row["id"],
-                    "name": row["name"],
-                    "gender": row["gender"],
-                    "profile_image": row["profile_image"],
-                    "value": get_ranking_value_for_category(key, totals),
+        podium_by_gender = {"Femme": [], "Homme": []}
+        for gender in VALID_GENDERS:
+            gender_users = [row for row in users if row["gender"] == gender]
+            if key == "yellow":
+                ranked = sorted(
+                    gender_users,
+                    key=lambda row: (
+                        -(round((row["total_distance_km"] / row["total_duration_min"]) * 60.0, 2) if row["total_duration_min"] > 0 else 0.0),
+                        -row["total_distance_km"],
+                        row["name"].lower(),
+                        row["id"],
+                    ),
+                )
+            elif key == "white":
+                ranked = sorted(gender_users, key=lambda row: (-row["total_distance_km"], row["name"].lower(), row["id"]))
+            elif key == "polka":
+                ranked = sorted(gender_users, key=lambda row: (-row["total_elevation_m"], row["name"].lower(), row["id"]))
+            else:
+                ranked = sorted(gender_users, key=lambda row: (-row["total_duration_min"], row["name"].lower(), row["id"]))
+
+            podium = []
+            for position, row in enumerate(ranked[:3], start=1):
+                totals = {
+                    "distance_km": row["total_distance_km"],
+                    "elevation_m": row["total_elevation_m"],
+                    "duration_min": row["total_duration_min"],
                 }
-            )
+                podium.append(
+                    {
+                        "position": position,
+                        "user_id": row["id"],
+                        "name": row["name"],
+                        "gender": row["gender"],
+                        "profile_image": row["profile_image"],
+                        "value": get_ranking_value_for_category(key, totals),
+                    }
+                )
+            podium_by_gender[gender] = podium
 
         categories.append(
             {
@@ -644,7 +649,7 @@ def build_ceremony_top_three(conn):
                 "title": definition["title"],
                 "unit": definition["unit"],
                 "description": definition["description"],
-                "podium": podium,
+                "podium_by_gender": podium_by_gender,
             }
         )
 
@@ -653,12 +658,14 @@ def build_ceremony_top_three(conn):
 
 def build_category_overtake_history(conn, max_events_per_category=20):
     users_meta = conn.execute(
-        "SELECT id, name FROM users ORDER BY id ASC"
+        "SELECT id, name, gender, profile_image FROM users ORDER BY id ASC"
     ).fetchall()
     if not users_meta:
         return []
 
     user_name_by_id = {row["id"]: row["name"] for row in users_meta}
+    user_gender_by_id = {row["id"]: row["gender"] for row in users_meta}
+    user_profile_image_by_id = {row["id"]: row["profile_image"] for row in users_meta}
     totals_by_user = {
         row["id"]: {
             "distance_km": 0.0,
@@ -669,11 +676,18 @@ def build_category_overtake_history(conn, max_events_per_category=20):
     }
 
     categories = get_ceremony_category_definitions()
-    previous_orders = {
-        category["key"]: [row["id"] for row in sort_users_for_category(users_meta, totals_by_user, category["key"])]
-        for category in categories
+    previous_orders = {category["key"]: {} for category in categories}
+    events_by_category = {category["key"]: {"Femme": [], "Homme": []} for category in categories}
+    users_by_gender = {
+        gender: [row for row in users_meta if row["gender"] == gender]
+        for gender in VALID_GENDERS
     }
-    events_by_category = {category["key"]: [] for category in categories}
+    for category in categories:
+        for gender in VALID_GENDERS:
+            previous_orders[category["key"]][gender] = [
+                row["id"]
+                for row in sort_users_for_category(users_by_gender[gender], totals_by_user, category["key"])
+            ]
 
     rides = conn.execute(
         """
@@ -706,41 +720,53 @@ def build_category_overtake_history(conn, max_events_per_category=20):
 
         for category in categories:
             category_key = category["key"]
-            new_order = [row["id"] for row in sort_users_for_category(users_meta, totals_by_user, category_key)]
-            previous_order = previous_orders[category_key]
+            for gender in VALID_GENDERS:
+                gender_users = users_by_gender[gender]
+                if not gender_users:
+                    continue
 
-            previous_pos = {user_id: idx for idx, user_id in enumerate(previous_order)}
-            new_pos = {user_id: idx for idx, user_id in enumerate(new_order)}
+                new_order = [
+                    row["id"]
+                    for row in sort_users_for_category(gender_users, totals_by_user, category_key)
+                ]
+                previous_order = previous_orders[category_key][gender]
 
-            for overtaker_id in new_order:
-                for overtaken_id in new_order:
-                    if overtaker_id == overtaken_id:
+                previous_pos = {user_id: idx for idx, user_id in enumerate(previous_order)}
+                new_pos = {user_id: idx for idx, user_id in enumerate(new_order)}
+
+                for overtaker_id in new_order:
+                    if user_gender_by_id.get(overtaker_id) != gender:
                         continue
+                    for overtaken_id in new_order:
+                        if overtaker_id == overtaken_id:
+                            continue
 
-                    was_behind = previous_pos[overtaker_id] > previous_pos[overtaken_id]
-                    is_now_ahead = new_pos[overtaker_id] < new_pos[overtaken_id]
-                    touches_podium = (
-                        previous_pos[overtaker_id] < 3
-                        or previous_pos[overtaken_id] < 3
-                        or new_pos[overtaker_id] < 3
-                        or new_pos[overtaken_id] < 3
-                    )
-                    if not (was_behind and is_now_ahead and touches_podium):
-                        continue
+                        was_behind = previous_pos[overtaker_id] > previous_pos[overtaken_id]
+                        is_now_ahead = new_pos[overtaker_id] < new_pos[overtaken_id]
+                        touches_podium = (
+                            previous_pos[overtaker_id] < 3
+                            or previous_pos[overtaken_id] < 3
+                            or new_pos[overtaker_id] < 3
+                            or new_pos[overtaken_id] < 3
+                        )
+                        if not (was_behind and is_now_ahead and touches_podium):
+                            continue
 
-                    current_value = get_ranking_value_for_category(category_key, totals_by_user[overtaker_id])
-                    events_by_category[category_key].append(
-                        {
-                            "time": event_time,
-                            "overtaker": user_name_by_id[overtaker_id],
-                            "overtaken": user_name_by_id[overtaken_id],
-                            "from_rank": previous_pos[overtaker_id] + 1,
-                            "to_rank": new_pos[overtaker_id] + 1,
-                            "value": current_value,
-                        }
-                    )
+                        current_value = get_ranking_value_for_category(category_key, totals_by_user[overtaker_id])
+                        events_by_category[category_key][gender].append(
+                            {
+                                "time": event_time,
+                                "overtaker": user_name_by_id[overtaker_id],
+                                "overtaken": user_name_by_id[overtaken_id],
+                                "overtaker_profile_image": user_profile_image_by_id.get(overtaker_id),
+                                "overtaken_profile_image": user_profile_image_by_id.get(overtaken_id),
+                                "from_rank": previous_pos[overtaker_id] + 1,
+                                "to_rank": new_pos[overtaker_id] + 1,
+                                "value": current_value,
+                            }
+                        )
 
-            previous_orders[category_key] = new_order
+                previous_orders[category_key][gender] = new_order
 
     history = []
     for category in categories:
@@ -750,7 +776,10 @@ def build_category_overtake_history(conn, max_events_per_category=20):
                 "key": key,
                 "title": category["title"],
                 "unit": category["unit"],
-                "events": events_by_category[key][-max_events_per_category:],
+                "events_by_gender": {
+                    gender: events_by_category[key][gender][-max_events_per_category:]
+                    for gender in VALID_GENDERS
+                },
             }
         )
 
@@ -758,7 +787,7 @@ def build_category_overtake_history(conn, max_events_per_category=20):
 
 
 def build_stage_wins_leaderboard(conn):
-    return conn.execute(
+    rows = conn.execute(
         """
         WITH daily_rides AS (
             SELECT
@@ -820,6 +849,13 @@ def build_stage_wins_leaderboard(conn):
         ORDER BY stage_wins DESC, u.name ASC
         """
     ).fetchall()
+
+    leaderboard_by_gender = {"Femme": [], "Homme": []}
+    for gender in VALID_GENDERS:
+        gender_rows = [row for row in rows if row["gender"] == gender]
+        leaderboard_by_gender[gender] = list(gender_rows[:3])
+
+    return leaderboard_by_gender
 
 def parse_gpx_metrics(path):
     tree = ET.parse(path)
