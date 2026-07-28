@@ -786,6 +786,153 @@ def build_category_overtake_history(conn, max_events_per_category=20):
     return history
 
 
+def build_category_progress_graphs(conn):
+    users_meta = conn.execute(
+        "SELECT id, name, gender FROM users ORDER BY name ASC, id ASC"
+    ).fetchall()
+    if not users_meta:
+        return []
+
+    daily_rows = conn.execute(
+        """
+        SELECT
+            date(created_at) AS ride_day,
+            user_id,
+            COALESCE(SUM(distance_km), 0) AS distance_km,
+            COALESCE(SUM(elevation_m), 0) AS elevation_m,
+            COALESCE(SUM(duration_min), 0) AS duration_min
+        FROM rides
+        GROUP BY date(created_at), user_id
+        ORDER BY date(created_at) ASC, user_id ASC
+        """
+    ).fetchall()
+
+    day_values = sorted({row["ride_day"] for row in daily_rows})
+    if not day_values:
+        return []
+
+    day_labels = []
+    for day in day_values:
+        try:
+            day_labels.append(datetime.fromisoformat(day).strftime("%d.%m"))
+        except ValueError:
+            day_labels.append(day)
+
+    daily_by_day_user = {}
+    for row in daily_rows:
+        daily_by_day_user.setdefault(row["ride_day"], {})[row["user_id"]] = {
+            "distance_km": row["distance_km"],
+            "elevation_m": row["elevation_m"],
+            "duration_min": row["duration_min"],
+        }
+
+    palette = [
+        "#2563eb",
+        "#dc2626",
+        "#16a34a",
+        "#9333ea",
+        "#f59e0b",
+        "#0f766e",
+        "#f97316",
+        "#475569",
+        "#be123c",
+        "#4f46e5",
+    ]
+
+    category_graphs = []
+    for category in get_ceremony_category_definitions():
+        category_key = category["key"]
+        charts_by_gender = {"Femme": None, "Homme": None}
+
+        for gender in VALID_GENDERS:
+            gender_users = [row for row in users_meta if row["gender"] == gender]
+            totals_by_user = {
+                row["id"]: {
+                    "distance_km": 0.0,
+                    "elevation_m": 0.0,
+                    "duration_min": 0.0,
+                }
+                for row in gender_users
+            }
+
+            all_series = []
+            for index, user_row in enumerate(gender_users):
+                user_id = user_row["id"]
+                values = []
+                for day in day_values:
+                    day_user_values = daily_by_day_user.get(day, {}).get(user_id)
+                    if day_user_values:
+                        totals_by_user[user_id]["distance_km"] += day_user_values["distance_km"]
+                        totals_by_user[user_id]["elevation_m"] += day_user_values["elevation_m"]
+                        totals_by_user[user_id]["duration_min"] += day_user_values["duration_min"]
+
+                    values.append(get_ranking_value_for_category(category_key, totals_by_user[user_id]))
+
+                all_series.append(
+                    {
+                        "user_id": user_id,
+                        "name": user_row["name"],
+                        "color": palette[index % len(palette)],
+                        "values": values,
+                    }
+                )
+
+            active_series = [
+                series for series in all_series if any(value > 0 for value in series["values"])
+            ]
+
+            y_max = 0.0
+            for series in active_series:
+                if series["values"]:
+                    y_max = max(y_max, max(series["values"]))
+            if y_max <= 0:
+                y_max = 1.0
+
+            total_days = len(day_values)
+            for series in active_series:
+                points = []
+                for idx, value in enumerate(series["values"]):
+                    x_pct = 0.0 if total_days <= 1 else (idx / (total_days - 1)) * 100.0
+                    y_pct = 100.0 - ((value / y_max) * 100.0)
+                    points.append(
+                        {
+                            "x_pct": round(x_pct, 2),
+                            "y_pct": round(y_pct, 2),
+                            "day_label": day_labels[idx],
+                            "value": round(value, 2),
+                        }
+                    )
+
+                series["points"] = points
+                series["polyline"] = " ".join(
+                    f"{point['x_pct']},{point['y_pct']}" for point in points
+                )
+                series["latest_value"] = round(series["values"][-1], 2) if series["values"] else 0.0
+
+            active_series = sorted(
+                active_series,
+                key=lambda entry: (-entry["latest_value"], entry["name"].lower()),
+            )
+
+            charts_by_gender[gender] = {
+                "days": day_labels,
+                "y_max": round(y_max, 2),
+                "series": active_series,
+            }
+
+        category_graphs.append(
+            {
+                "key": category_key,
+                "title": category["title"],
+                "unit": category["unit"],
+                "description": category["description"],
+                "charts_by_gender": charts_by_gender,
+            }
+        )
+
+    return category_graphs
+
+
 def build_stage_wins_leaderboard(conn):
     rows = conn.execute(
         """
@@ -1333,14 +1480,14 @@ def ceremony_dashboard():
 
     conn = get_db()
     ceremony_categories = build_ceremony_top_three(conn)
-    ceremony_overtakes = build_category_overtake_history(conn)
+    ceremony_progress_graphs = build_category_progress_graphs(conn)
     stage_wins_leaderboard = build_stage_wins_leaderboard(conn)
 
     return render_template(
         "ceremony.html",
         user=user,
         ceremony_categories=ceremony_categories,
-        ceremony_overtakes=ceremony_overtakes,
+        ceremony_progress_graphs=ceremony_progress_graphs,
         stage_wins_leaderboard=stage_wins_leaderboard,
     )
 

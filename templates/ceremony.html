@@ -236,35 +236,22 @@
       gap: 8px;
     }
 
-    .graph-list {
-      margin: 0;
-      padding: 0;
-      list-style: none;
+    .chart-frame {
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: #fff;
+      padding: 8px;
       display: grid;
       gap: 8px;
     }
 
-    .graph-item {
-      background: #fff;
-      border: 1px solid var(--line);
+    .chart-svg {
+      width: 100%;
+      height: 240px;
+      display: block;
       border-radius: 10px;
-      padding: 8px;
-      display: grid;
-      gap: 6px;
-    }
-
-    .graph-label {
-      color: #334155;
-      font-size: 0.85rem;
-    }
-
-    .rank-track {
-      position: relative;
-      height: 28px;
-      border-radius: 999px;
-      background: linear-gradient(90deg, #f8fafc, #e2e8f0);
-      border: 1px solid var(--line);
-      overflow: hidden;
+      background: linear-gradient(180deg, rgba(255,255,255,0.8), rgba(248,250,252,0.95));
+      border: 1px solid rgba(148,163,184,0.25);
     }
 
     .history-card.category-yellow .rank-track {
@@ -283,71 +270,92 @@
       background: linear-gradient(90deg, #dcfce7, #86efac);
     }
 
-    .rank-dot {
-      position: absolute;
-      top: 50%;
-      width: 11px;
-      height: 11px;
-      border-radius: 999px;
-      transform: translate(-50%, -50%);
+    .history-card.category-yellow .chart-svg {
+      background: linear-gradient(180deg, rgba(254, 252, 232, 0.9), rgba(254, 249, 195, 0.8));
     }
 
-    .rank-dot.from {
-      background: #ef4444;
+    .history-card.category-white .chart-svg {
+      background: linear-gradient(180deg, rgba(255, 255, 255, 0.95), rgba(241, 245, 249, 0.9));
     }
 
-    .rank-dot.to {
-      background: #16a34a;
+    .history-card.category-polka .chart-svg {
+      background: linear-gradient(180deg, rgba(255, 245, 245, 0.95), rgba(254, 226, 226, 0.92));
     }
 
-    .rank-line {
-      position: absolute;
-      top: 50%;
-      height: 3px;
-      border-radius: 999px;
-      background: #0f172a;
-      transform: translateY(-50%);
+    .history-card.category-green .chart-svg {
+      background: linear-gradient(180deg, rgba(240, 253, 244, 0.95), rgba(220, 252, 231, 0.9));
     }
 
-    .avatar-lane {
-      display: grid;
-      grid-template-columns: 1fr auto 1fr;
-      align-items: center;
-      gap: 6px;
+    .chart-grid line {
+      stroke: rgba(148, 163, 184, 0.35);
+      stroke-width: 0.6;
+    }
+
+    .chart-line {
+      fill: none;
+      stroke-width: 1.6;
+      opacity: 0.92;
+      stroke-linejoin: round;
+      stroke-linecap: round;
+    }
+
+    .chart-point {
+      stroke: #ffffff;
+      stroke-width: 0.5;
+    }
+
+    .chart-axis {
+      display: flex;
+      justify-content: space-between;
       font-size: 0.78rem;
-      color: #334155;
+      color: #475569;
     }
 
-    .avatar-chip {
+    .day-row {
+      display: flex;
+      justify-content: space-between;
+      gap: 8px;
+      color: #64748b;
+      font-size: 0.72rem;
+      overflow-x: auto;
+      white-space: nowrap;
+    }
+
+    .legend-list {
+      margin: 0;
+      padding: 0;
+      list-style: none;
+      display: grid;
+      gap: 6px;
+    }
+
+    .legend-list li {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      font-size: 0.82rem;
+      border-radius: 8px;
+      border: 1px solid rgba(148, 163, 184, 0.3);
+      background: rgba(255, 255, 255, 0.88);
+      padding: 6px 8px;
+    }
+
+    .legend-main {
       display: inline-flex;
       align-items: center;
       gap: 6px;
       min-width: 0;
     }
 
-    .avatar-chip.end {
-      justify-content: flex-end;
-    }
-
-    .avatar-chip img,
-    .avatar-fallback {
-      width: 20px;
-      height: 20px;
+    .legend-dot {
+      width: 10px;
+      height: 10px;
       border-radius: 999px;
-      object-fit: cover;
-      border: 1px solid rgba(15, 23, 42, 0.2);
-      background: #fff;
       flex: 0 0 auto;
     }
 
-    .avatar-fallback {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 0.7rem;
-    }
-
-    .avatar-name {
+    .legend-name {
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
@@ -456,9 +464,9 @@
         </div>
         <ul class="change-list">
           <li>Top 3 je Kategorie sind jetzt getrennt nach Femme und Homme.</li>
-          <li>Ueberholungen werden als grafische Timeline dargestellt.</li>
-          <li>Jede Ueberholung zeigt Startplatz, Zielplatz und den erreichten Wert.</li>
-          <li>In der Timeline sind kleine Profil-Avatare von ueberholender und ueberholter Person sichtbar.</li>
+          <li>Ueberholungen sind jetzt als Liniengraph mit allen Fahrern pro Kategorie sichtbar.</li>
+          <li>Die Linien liegen uebereinander, damit Schnittpunkte und Ueberholungen direkt erkennbar sind.</li>
+          <li>Pro Tag wird der Verlauf jeder Person ueber die Tour visualisiert.</li>
           <li>Etappensiege sind auf Top 3 pro Geschlecht begrenzt.</li>
         </ul>
       </div>
@@ -502,56 +510,59 @@
     </section>
 
     <section class="card">
-      <h2>Wann hat wer wen ueberholt?</h2>
-      <p>Grafische Timeline der letzten Fuehrungswechsel im Podiumsbereich, getrennt nach Geschlecht.</p>
+      <h2>Verlauf pro Fahrer: Ueberholungen als Schnittpunkte</h2>
+      <p>Alle Fahrerlinien liegen uebereinander. Wenn sich Linien schneiden, ist der Ueberholpunkt sichtbar.</p>
       <div class="history-grid">
-        {% for category in ceremony_overtakes %}
+        {% for category in ceremony_progress_graphs %}
           <article class="history-card category-{{ category.key }}">
             <strong>{{ category.title }}</strong>
             {% for gender in ['Femme', 'Homme'] %}
               <section class="overtake-gender">
                 <span class="gender-title">{{ gender }}</span>
-                <ul class="graph-list">
-                  {% for event in category.events_by_gender[gender] %}
-                    {% set from_pos = ((event.from_rank - 1) / 2.0) * 100 %}
-                    {% set to_pos = ((event.to_rank - 1) / 2.0) * 100 %}
-                    {% set left_pos = from_pos if from_pos < to_pos else to_pos %}
-                    {% set width_pos = (to_pos - from_pos) if to_pos > from_pos else (from_pos - to_pos) %}
-                    <li class="graph-item">
-                      <div class="graph-label">{{ event.time }} · {{ event.overtaker }} ueberholt {{ event.overtaken }}</div>
-                      <div class="avatar-lane">
-                        <span class="avatar-chip">
-                          {% if event.overtaker_profile_image %}
-                            <img src="{{ url_for('uploaded_file', filename=event.overtaker_profile_image) }}" alt="Profilbild von {{ event.overtaker }}">
-                          {% else %}
-                            <span class="avatar-fallback">🙂</span>
-                          {% endif %}
-                          <span class="avatar-name">{{ event.overtaker }}</span>
+                {% set chart = category.charts_by_gender[gender] %}
+                {% if chart.series %}
+                  <div class="chart-frame">
+                    <svg class="chart-svg" viewBox="0 0 100 100" preserveAspectRatio="none" aria-label="{{ category.title }} Verlauf {{ gender }}">
+                      <g class="chart-grid">
+                        <line x1="0" y1="0" x2="100" y2="0"></line>
+                        <line x1="0" y1="25" x2="100" y2="25"></line>
+                        <line x1="0" y1="50" x2="100" y2="50"></line>
+                        <line x1="0" y1="75" x2="100" y2="75"></line>
+                        <line x1="0" y1="100" x2="100" y2="100"></line>
+                      </g>
+                      {% for series in chart.series %}
+                        <polyline class="chart-line" points="{{ series.polyline }}" stroke="{{ series.color }}"></polyline>
+                        {% for point in series.points %}
+                          <circle class="chart-point" cx="{{ point.x_pct }}" cy="{{ point.y_pct }}" r="0.9" fill="{{ series.color }}">
+                            <title>{{ series.name }} · {{ point.day_label }} · {{ point.value|round(2) }} {{ category.unit }}</title>
+                          </circle>
+                        {% endfor %}
+                      {% endfor %}
+                    </svg>
+                    <div class="chart-axis">
+                      <span>0 {{ category.unit }}</span>
+                      <span>{{ chart.y_max|round(2) }} {{ category.unit }}</span>
+                    </div>
+                    <div class="day-row">
+                      {% for day in chart.days %}
+                        <span>{{ day }}</span>
+                      {% endfor %}
+                    </div>
+                  </div>
+                  <ul class="legend-list">
+                    {% for series in chart.series %}
+                      <li>
+                        <span class="legend-main">
+                          <span class="legend-dot" style="background: {{ series.color }};"></span>
+                          <span class="legend-name">{{ series.name }}</span>
                         </span>
-                        <span>ueberholt</span>
-                        <span class="avatar-chip end">
-                          <span class="avatar-name">{{ event.overtaken }}</span>
-                          {% if event.overtaken_profile_image %}
-                            <img src="{{ url_for('uploaded_file', filename=event.overtaken_profile_image) }}" alt="Profilbild von {{ event.overtaken }}">
-                          {% else %}
-                            <span class="avatar-fallback">🙂</span>
-                          {% endif %}
-                        </span>
-                      </div>
-                      <div class="rank-track" aria-label="Von Platz {{ event.from_rank }} auf Platz {{ event.to_rank }}">
-                        <div class="rank-line" style="left: {{ left_pos }}%; width: {{ width_pos }}%;"></div>
-                        <div class="rank-dot from" style="left: {{ from_pos }}%;"></div>
-                        <div class="rank-dot to" style="left: {{ to_pos }}%;"></div>
-                      </div>
-                      <div class="rank-captions">
-                        <span>von P{{ event.from_rank }}</span>
-                        <span>zu P{{ event.to_rank }} · {{ event.value|round(2) }} {{ category.unit }}</span>
-                      </div>
-                    </li>
-                  {% else %}
-                    <li><span class="muted">Noch keine Ueberholungen im Podiumsbereich.</span></li>
-                  {% endfor %}
-                </ul>
+                        <strong>{{ series.latest_value|round(2) }} {{ category.unit }}</strong>
+                      </li>
+                    {% endfor %}
+                  </ul>
+                {% else %}
+                  <span class="muted">Noch keine Fahrten fuer diesen Verlauf vorhanden.</span>
+                {% endif %}
               </section>
             {% endfor %}
           </article>
