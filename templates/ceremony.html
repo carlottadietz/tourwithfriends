@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Siegerehrung Dashboard</title>
+  <title>Siegerehrungs-Dashboard</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;700;800&family=Inter:wght@400;500;700;800&display=swap" rel="stylesheet">
@@ -138,6 +138,46 @@
       list-style: none;
       display: grid;
       gap: 8px;
+    }
+
+    .ceremony-viewer {
+      display: grid;
+      gap: 8px;
+    }
+
+    .viewer-stage {
+      min-height: 92px;
+      display: grid;
+    }
+
+    .podium-slide {
+      display: none;
+    }
+
+    .podium-slide.active {
+      display: block;
+    }
+
+    .ceremony-controls {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+    }
+
+    .ceremony-controls .button-link {
+      padding: 6px 10px;
+      border-radius: 10px;
+      font-size: 0.8rem;
+      background: #fff7cc;
+      border-color: rgba(234, 179, 8, 0.4);
+    }
+
+    .ceremony-counter {
+      font-size: 0.78rem;
+      font-weight: 700;
+      color: #475569;
+      white-space: nowrap;
     }
 
     .podium-card li {
@@ -446,12 +486,12 @@
   <div class="page">
     <section class="card hero">
       <div>
-        <h1>Siegerehrung Dashboard</h1>
-        <p>Top 3 je Kategorie, Ueberholungen im Ranking und die meisten Etappensiege des Tages.</p>
+        <h1>Siegerehrungs-Dashboard</h1>
+        <p>Top 3 je Kategorie, Überholungen im Ranking und die meisten Etappensiege des Tages.</p>
       </div>
       <div class="button-row">
-        <button id="open-changes" class="button-link" type="button">Aenderungen anzeigen</button>
-        <a class="button-link" href="{{ url_for('index') }}">Zurueck zum Dashboard</a>
+        <button id="open-changes" class="button-link" type="button">Änderungen anzeigen</button>
+        <a class="button-link" href="{{ url_for('index') }}">Zurück zum Dashboard</a>
         <a class="button-link" href="{{ url_for('support') }}">Support</a>
       </div>
     </section>
@@ -459,14 +499,14 @@
     <dialog id="changes-dialog" class="change-dialog">
       <div class="change-dialog-content">
         <div class="change-dialog-head">
-          <h2>Neue Aenderungen im Siegerehrungs-Dashboard</h2>
-          <button id="close-changes" class="button-link" type="button">Schliessen</button>
+          <h2>Neue Änderungen im Siegerehrungs-Dashboard</h2>
+          <button id="close-changes" class="button-link" type="button">Schließen</button>
         </div>
         <ul class="change-list">
           <li>Top 3 je Kategorie sind jetzt getrennt nach Femme und Homme.</li>
-          <li>Ueberholungen sind jetzt als Liniengraph mit allen Fahrern pro Kategorie sichtbar.</li>
-          <li>Die Linien liegen uebereinander, damit Schnittpunkte und Ueberholungen direkt erkennbar sind.</li>
-          <li>Pro Tag wird der Verlauf jeder Person ueber die Tour visualisiert.</li>
+          <li>Überholungen sind jetzt als Liniengraph mit allen Fahrern pro Kategorie sichtbar.</li>
+          <li>Die Linien liegen übereinander, damit Schnittpunkte und Überholungen direkt erkennbar sind.</li>
+          <li>Pro Tag wird der Verlauf jeder Person über die Tour visualisiert.</li>
           <li>Etappensiege sind auf Top 3 pro Geschlecht begrenzt.</li>
         </ul>
       </div>
@@ -474,6 +514,7 @@
 
     <section class="card">
       <h2>Top 3 pro Kategorie</h2>
+      <p>Wie bei einer echten Siegerehrung: Die Plätze werden nacheinander aufgerufen.</p>
       <div class="podium-grid">
         {% for category in ceremony_categories %}
           <article class="podium-card">
@@ -485,22 +526,33 @@
               {% for gender in ['Femme', 'Homme'] %}
                 <section class="gender-podium">
                   <span class="gender-title">{{ gender }}</span>
-                  <ol>
-                    {% for entry in category.podium_by_gender[gender] %}
-                      <li>
-                        <span class="podium-left">
-                          <span class="place-chip {{ 'p1' if entry.position == 1 else 'p2' if entry.position == 2 else 'p3' }}">{{ entry.position }}</span>
-                          <span class="name-block">
-                            <strong>{{ entry.name }}</strong>
-                            <span class="muted">{{ entry.gender }}</span>
-                          </span>
-                        </span>
-                        <span class="value">{{ entry.value|round(2) }} {{ category.unit }}</span>
-                      </li>
-                    {% else %}
-                      <li><span class="muted">Noch keine Eintraege.</span></li>
-                    {% endfor %}
-                  </ol>
+                  {% if category.podium_by_gender[gender] %}
+                    <div class="ceremony-viewer" data-ceremony-viewer>
+                      <div class="viewer-stage">
+                        {% for entry in category.podium_by_gender[gender] %}
+                          <ol class="podium-slide{% if loop.first %} active{% endif %}" data-slide>
+                            <li>
+                              <span class="podium-left">
+                                <span class="place-chip {{ 'p1' if entry.position == 1 else 'p2' if entry.position == 2 else 'p3' }}">{{ entry.position }}</span>
+                                <span class="name-block">
+                                  <strong>{{ entry.name }}</strong>
+                                  <span class="muted">{{ entry.gender }}</span>
+                                </span>
+                              </span>
+                              <span class="value">{{ entry.value|round(2) }} {{ category.unit }}</span>
+                            </li>
+                          </ol>
+                        {% endfor %}
+                      </div>
+                      <div class="ceremony-controls">
+                        <button class="button-link" type="button" data-action="prev">Vorheriger Platz</button>
+                        <span class="ceremony-counter" data-counter></span>
+                        <button class="button-link" type="button" data-action="next">Nächster Platz</button>
+                      </div>
+                    </div>
+                  {% else %}
+                    <span class="muted">Noch keine Einträge.</span>
+                  {% endif %}
                 </section>
               {% endfor %}
             </div>
@@ -510,8 +562,8 @@
     </section>
 
     <section class="card">
-      <h2>Verlauf pro Fahrer: Ueberholungen als Schnittpunkte</h2>
-      <p>Alle Fahrerlinien liegen uebereinander. Wenn sich Linien schneiden, ist der Ueberholpunkt sichtbar.</p>
+      <h2>Verlauf pro Fahrer: Überholungen als Schnittpunkte</h2>
+      <p>Alle Fahrerlinien liegen übereinander. Wenn sich Linien schneiden, ist der Überholpunkt sichtbar.</p>
       <div class="history-grid">
         {% for category in ceremony_progress_graphs %}
           <article class="history-card category-{{ category.key }}">
@@ -561,7 +613,7 @@
                     {% endfor %}
                   </ul>
                 {% else %}
-                  <span class="muted">Noch keine Fahrten fuer diesen Verlauf vorhanden.</span>
+                  <span class="muted">Noch keine Fahrten für diesen Verlauf vorhanden.</span>
                 {% endif %}
               </section>
             {% endfor %}
@@ -595,6 +647,7 @@
     const changeDialog = document.getElementById('changes-dialog');
     const openChanges = document.getElementById('open-changes');
     const closeChanges = document.getElementById('close-changes');
+    const ceremonyViewers = document.querySelectorAll('[data-ceremony-viewer]');
 
     if (changeDialog && openChanges && closeChanges) {
       openChanges.addEventListener('click', () => {
@@ -613,6 +666,39 @@
         }
       });
     }
+
+    ceremonyViewers.forEach((viewer) => {
+      const slides = Array.from(viewer.querySelectorAll('[data-slide]'));
+      const prevButton = viewer.querySelector('[data-action="prev"]');
+      const nextButton = viewer.querySelector('[data-action="next"]');
+      const counter = viewer.querySelector('[data-counter]');
+      if (!slides.length || !prevButton || !nextButton || !counter) {
+        return;
+      }
+
+      let activeIndex = 0;
+
+      const renderSlide = () => {
+        slides.forEach((slide, index) => {
+          slide.classList.toggle('active', index === activeIndex);
+        });
+        counter.textContent = `Platz ${activeIndex + 1} von ${slides.length}`;
+        prevButton.disabled = activeIndex === 0;
+        nextButton.disabled = activeIndex === slides.length - 1;
+      };
+
+      prevButton.addEventListener('click', () => {
+        activeIndex = Math.max(0, activeIndex - 1);
+        renderSlide();
+      });
+
+      nextButton.addEventListener('click', () => {
+        activeIndex = Math.min(slides.length - 1, activeIndex + 1);
+        renderSlide();
+      });
+
+      renderSlide();
+    });
   </script>
 </body>
 </html>
