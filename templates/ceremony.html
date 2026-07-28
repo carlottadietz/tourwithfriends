@@ -94,19 +94,55 @@
       font-size: inherit;
     }
 
-    .podium-grid {
+    .podium-shell,
+    .insight-shell {
       display: grid;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-      gap: 14px;
+      gap: 12px;
+    }
+
+    .podium-tabs,
+    .overview-tabs {
+      display: flex;
+      gap: 8px;
+      overflow-x: auto;
+      padding-bottom: 4px;
+    }
+
+    .podium-tab,
+    .overview-tab {
+      border: 1px solid rgba(148, 163, 184, 0.4);
+      border-radius: 999px;
+      background: #ffffff;
+      color: #0f172a;
+      font-weight: 800;
+      white-space: nowrap;
+      padding: 8px 14px;
+      cursor: pointer;
+    }
+
+    .podium-tab.active,
+    .overview-tab.active {
+      background: #facc15;
+      border-color: rgba(234, 179, 8, 0.6);
+    }
+
+    .podium-panel,
+    .overview-panel {
+      display: none;
+    }
+
+    .podium-panel.active,
+    .overview-panel.active {
+      display: block;
     }
 
     .podium-card {
       border: 1px solid var(--line);
       border-radius: 16px;
-      padding: 14px;
+      padding: 16px;
       background: linear-gradient(160deg, #ffffff, #f8fafc);
       display: grid;
-      gap: 10px;
+      gap: 12px;
     }
 
     .gender-columns {
@@ -118,7 +154,7 @@
     .gender-podium {
       border: 1px solid var(--line);
       border-radius: 12px;
-      padding: 10px;
+      padding: 12px;
       background: #fff;
       display: grid;
       gap: 8px;
@@ -132,58 +168,35 @@
       color: #334155;
     }
 
-    .podium-card ol {
-      margin: 0;
-      padding-left: 0;
-      list-style: none;
-      display: grid;
-      gap: 8px;
-    }
-
     .ceremony-viewer {
       display: grid;
-      gap: 8px;
+      gap: 10px;
     }
 
     .viewer-stage {
-      min-height: 92px;
+      min-height: 160px;
       display: grid;
     }
 
-    .podium-slide {
+    .podium-card ol {
+      margin: 0;
+      padding: 0;
+      list-style: none;
+    }
+
+    .podium-card ol.podium-slide {
       display: none;
     }
 
-    .podium-slide.active {
+    .podium-card ol.podium-slide.active {
       display: block;
     }
 
-    .ceremony-controls {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 8px;
-    }
-
-    .ceremony-controls .button-link {
-      padding: 6px 10px;
-      border-radius: 10px;
-      font-size: 0.8rem;
-      background: #fff7cc;
-      border-color: rgba(234, 179, 8, 0.4);
-    }
-
-    .ceremony-counter {
-      font-size: 0.78rem;
-      font-weight: 700;
-      color: #475569;
-      white-space: nowrap;
-    }
-
-    .podium-card li {
+    .podium-card ol.podium-slide li {
+      min-height: 132px;
       border: 1px solid var(--line);
-      border-radius: 12px;
-      padding: 10px;
+      border-radius: 16px;
+      padding: 14px;
       display: flex;
       justify-content: space-between;
       gap: 10px;
@@ -193,19 +206,19 @@
 
     .podium-left {
       display: inline-flex;
-      gap: 8px;
+      gap: 12px;
       align-items: center;
       min-width: 0;
     }
 
     .place-chip {
-      width: 28px;
-      height: 28px;
+      width: 42px;
+      height: 42px;
       border-radius: 999px;
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      font-size: 0.85rem;
+      font-size: 1.05rem;
       font-weight: 800;
       border: 1px solid var(--line);
       flex: 0 0 auto;
@@ -215,12 +228,39 @@
     .place-chip.p2 { background: var(--silver); }
     .place-chip.p3 { background: var(--bronze); }
 
+    .podium-avatar {
+      width: 84px;
+      height: 84px;
+      border-radius: 999px;
+      object-fit: cover;
+      border: 3px solid rgba(255, 255, 255, 0.95);
+      box-shadow: 0 8px 20px rgba(15, 23, 42, 0.16);
+      background: #ffffff;
+      flex: 0 0 auto;
+    }
+
+    .podium-avatar-fallback {
+      width: 84px;
+      height: 84px;
+      border-radius: 999px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 2rem;
+      border: 3px solid rgba(255, 255, 255, 0.95);
+      box-shadow: 0 8px 20px rgba(15, 23, 42, 0.16);
+      background: #f8fafc;
+      flex: 0 0 auto;
+    }
+
     .name-block {
       display: grid;
       min-width: 0;
+      gap: 2px;
     }
 
     .name-block strong {
+      font-size: 2rem;
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
@@ -234,97 +274,100 @@
     .value {
       font-weight: 800;
       white-space: nowrap;
+      font-size: 2rem;
     }
 
-    .history-grid {
-      display: grid;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-      gap: 14px;
+    .ceremony-controls {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
     }
 
-    .history-card {
+    .ceremony-controls .button-link {
+      padding: 8px 12px;
+      border-radius: 10px;
+      font-size: 1rem;
+      background: #fff7cc;
+      border-color: rgba(234, 179, 8, 0.4);
+    }
+
+    .ceremony-counter {
+      font-size: 1rem;
+      font-weight: 700;
+      color: #475569;
+      white-space: nowrap;
+    }
+
+    .overview-panel {
       border: 1px solid var(--line);
       border-radius: 16px;
       padding: 14px;
-      background: #fff;
+      gap: 10px;
+    }
+
+    .overview-panel.category-yellow { background: linear-gradient(170deg, #fffef2, #fff8db); }
+    .overview-panel.category-white { background: linear-gradient(170deg, #ffffff, #f8fafc); }
+    .overview-panel.category-polka { background: linear-gradient(170deg, #fff5f5, #ffe7e7); }
+    .overview-panel.category-green { background: linear-gradient(170deg, #f0fdf4, #dcfce7); }
+
+    .overview-title {
+      display: grid;
+      gap: 4px;
+    }
+
+    .chart-stage {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    .chart-card {
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 10px;
+      background: rgba(255, 255, 255, 0.9);
       display: grid;
       gap: 10px;
     }
 
-    .history-card.category-yellow {
-      background: linear-gradient(170deg, #fffef2, #fff8db);
-    }
-
-    .history-card.category-white {
-      background: linear-gradient(170deg, #ffffff, #f8fafc);
-    }
-
-    .history-card.category-polka {
-      background: linear-gradient(170deg, #fff5f5, #ffe7e7);
-    }
-
-    .history-card.category-green {
-      background: linear-gradient(170deg, #f0fdf4, #dcfce7);
-    }
-
-    .overtake-gender {
-      border: 1px solid var(--line);
-      border-radius: 12px;
-      padding: 10px;
-      background: #f8fafc;
-      display: grid;
+    .chart-head {
+      display: flex;
+      justify-content: space-between;
       gap: 8px;
+      align-items: center;
     }
 
-    .chart-frame {
-      border: 1px solid var(--line);
-      border-radius: 12px;
-      background: #fff;
-      padding: 8px;
+    .axis-note {
+      font-size: 0.78rem;
+      color: #475569;
+      font-weight: 600;
+    }
+
+    .chart-scroll {
+      overflow-x: auto;
+      padding-bottom: 6px;
+    }
+
+    .chart-canvas {
+      min-width: max(860px, calc(var(--day-count) * 72px));
       display: grid;
       gap: 8px;
     }
 
     .chart-svg {
       width: 100%;
-      height: 240px;
+      height: 420px;
       display: block;
       border-radius: 10px;
-      background: linear-gradient(180deg, rgba(255,255,255,0.8), rgba(248,250,252,0.95));
       border: 1px solid rgba(148,163,184,0.25);
+      background: linear-gradient(180deg, rgba(255,255,255,0.9), rgba(248,250,252,0.98));
     }
 
-    .history-card.category-yellow .rank-track {
-      background: linear-gradient(90deg, #fef9c3, #fde047);
-    }
-
-    .history-card.category-white .rank-track {
-      background: linear-gradient(90deg, #f8fafc, #e2e8f0);
-    }
-
-    .history-card.category-polka .rank-track {
-      background: linear-gradient(90deg, #fee2e2, #fca5a5);
-    }
-
-    .history-card.category-green .rank-track {
-      background: linear-gradient(90deg, #dcfce7, #86efac);
-    }
-
-    .history-card.category-yellow .chart-svg {
-      background: linear-gradient(180deg, rgba(254, 252, 232, 0.9), rgba(254, 249, 195, 0.8));
-    }
-
-    .history-card.category-white .chart-svg {
-      background: linear-gradient(180deg, rgba(255, 255, 255, 0.95), rgba(241, 245, 249, 0.9));
-    }
-
-    .history-card.category-polka .chart-svg {
-      background: linear-gradient(180deg, rgba(255, 245, 245, 0.95), rgba(254, 226, 226, 0.92));
-    }
-
-    .history-card.category-green .chart-svg {
-      background: linear-gradient(180deg, rgba(240, 253, 244, 0.95), rgba(220, 252, 231, 0.9));
-    }
+    .overview-panel.category-yellow .chart-svg { background: linear-gradient(180deg, rgba(254, 252, 232, 0.95), rgba(254, 249, 195, 0.8)); }
+    .overview-panel.category-white .chart-svg { background: linear-gradient(180deg, rgba(255, 255, 255, 0.95), rgba(241, 245, 249, 0.9)); }
+    .overview-panel.category-polka .chart-svg { background: linear-gradient(180deg, rgba(255, 245, 245, 0.95), rgba(254, 226, 226, 0.92)); }
+    .overview-panel.category-green .chart-svg { background: linear-gradient(180deg, rgba(240, 253, 244, 0.95), rgba(220, 252, 231, 0.9)); }
 
     .chart-grid line {
       stroke: rgba(148, 163, 184, 0.35);
@@ -352,13 +395,16 @@
     }
 
     .day-row {
-      display: flex;
-      justify-content: space-between;
-      gap: 8px;
+      display: grid;
+      grid-template-columns: repeat(var(--day-count), minmax(58px, 1fr));
+      gap: 4px;
       color: #64748b;
       font-size: 0.72rem;
-      overflow-x: auto;
       white-space: nowrap;
+    }
+
+    .day-row span {
+      text-align: center;
     }
 
     .legend-list {
@@ -440,13 +486,6 @@
       gap: 8px;
     }
 
-    .rank-captions {
-      display: flex;
-      justify-content: space-between;
-      font-size: 0.78rem;
-      color: #475569;
-    }
-
     .stage-grid {
       display: grid;
       grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -473,11 +512,25 @@
     }
 
     @media (max-width: 900px) {
-      .podium-grid,
-      .history-grid,
+      .chart-stage,
       .stage-grid,
       .gender-columns {
         grid-template-columns: 1fr;
+      }
+
+      .name-block strong,
+      .value {
+        font-size: 1.6rem;
+      }
+
+      .podium-avatar,
+      .podium-avatar-fallback {
+        width: 68px;
+        height: 68px;
+      }
+
+      .chart-canvas {
+        min-width: max(680px, calc(var(--day-count) * 64px));
       }
     }
   </style>
@@ -503,10 +556,11 @@
           <button id="close-changes" class="button-link" type="button">Schließen</button>
         </div>
         <ul class="change-list">
-          <li>Top 3 je Kategorie sind jetzt getrennt nach Femme und Homme.</li>
-          <li>Überholungen sind jetzt als Liniengraph mit allen Fahrern pro Kategorie sichtbar.</li>
-          <li>Die Linien liegen übereinander, damit Schnittpunkte und Überholungen direkt erkennbar sind.</li>
-          <li>Pro Tag wird der Verlauf jeder Person über die Tour visualisiert.</li>
+          <li>Top 3 je Kategorie haben jetzt eine eigene Taskleiste zum Durchklicken.</li>
+          <li>Pro Geschlecht ist bei den Top 3 immer nur ein Platz gleichzeitig sichtbar.</li>
+          <li>Profilbilder, Namen und Platzierungen im Podium sind deutlich größer dargestellt.</li>
+          <li>Liniengraphen sind größer und zeigen alle Tage auf der X-Achse vollständig an.</li>
+          <li>Die Y-Achse zeigt je Kategorie km, Höhenmeter, Zeit oder km/h.</li>
           <li>Etappensiege sind auf Top 3 pro Geschlecht begrenzt.</li>
         </ul>
       </div>
@@ -515,46 +569,59 @@
     <section class="card">
       <h2>Top 3 pro Kategorie</h2>
       <p>Wie bei einer echten Siegerehrung: Die Plätze werden nacheinander aufgerufen.</p>
-      <div class="podium-grid">
+      <div class="podium-shell">
+        <div class="podium-tabs" role="tablist" aria-label="Kategorie wählen">
+          {% for category in ceremony_categories %}
+            <button class="podium-tab{% if loop.first %} active{% endif %}" type="button" role="tab" aria-selected="{{ 'true' if loop.first else 'false' }}" data-podium-tab data-target="podium-{{ category.key }}">{{ category.title }}</button>
+          {% endfor %}
+        </div>
+
         {% for category in ceremony_categories %}
-          <article class="podium-card">
-            <div>
-              <strong>{{ category.title }}</strong>
-              <p>{{ category.description }}</p>
-            </div>
-            <div class="gender-columns">
-              {% for gender in ['Femme', 'Homme'] %}
-                <section class="gender-podium">
-                  <span class="gender-title">{{ gender }}</span>
-                  {% if category.podium_by_gender[gender] %}
-                    <div class="ceremony-viewer" data-ceremony-viewer>
-                      <div class="viewer-stage">
-                        {% for entry in category.podium_by_gender[gender] %}
-                          <ol class="podium-slide{% if loop.first %} active{% endif %}" data-slide>
-                            <li>
-                              <span class="podium-left">
-                                <span class="place-chip {{ 'p1' if entry.position == 1 else 'p2' if entry.position == 2 else 'p3' }}">{{ entry.position }}</span>
-                                <span class="name-block">
-                                  <strong>{{ entry.name }}</strong>
-                                  <span class="muted">{{ entry.gender }}</span>
+          <article id="podium-{{ category.key }}" class="podium-panel{% if loop.first %} active{% endif %}" role="tabpanel" data-podium-panel>
+            <div class="podium-card">
+              <div>
+                <strong>{{ category.title }}</strong>
+                <p>{{ category.description }}</p>
+              </div>
+              <div class="gender-columns">
+                {% for gender in ['Femme', 'Homme'] %}
+                  <section class="gender-podium">
+                    <span class="gender-title">{{ gender }}</span>
+                    {% if category.podium_by_gender[gender] %}
+                      <div class="ceremony-viewer" data-ceremony-viewer>
+                        <div class="viewer-stage">
+                          {% for entry in category.podium_by_gender[gender] %}
+                            <ol class="podium-slide{% if loop.first %} active{% endif %}" data-slide>
+                              <li>
+                                <span class="podium-left">
+                                  <span class="place-chip {{ 'p1' if entry.position == 1 else 'p2' if entry.position == 2 else 'p3' }}">{{ entry.position }}</span>
+                                  {% if entry.profile_image %}
+                                    <img class="podium-avatar" src="{{ url_for('uploaded_file', filename=entry.profile_image) }}" alt="Profilbild von {{ entry.name }}">
+                                  {% else %}
+                                    <span class="podium-avatar-fallback">🙂</span>
+                                  {% endif %}
+                                  <span class="name-block">
+                                    <strong>{{ entry.name }}</strong>
+                                    <span class="muted">{{ entry.gender }}</span>
+                                  </span>
                                 </span>
-                              </span>
-                              <span class="value">{{ entry.value|round(2) }} {{ category.unit }}</span>
-                            </li>
-                          </ol>
-                        {% endfor %}
+                                <span class="value">{{ entry.value|round(2) }} {{ category.unit }}</span>
+                              </li>
+                            </ol>
+                          {% endfor %}
+                        </div>
+                        <div class="ceremony-controls">
+                          <button class="button-link" type="button" data-action="prev">Vorheriger Platz</button>
+                          <span class="ceremony-counter" data-counter></span>
+                          <button class="button-link" type="button" data-action="next">Nächster Platz</button>
+                        </div>
                       </div>
-                      <div class="ceremony-controls">
-                        <button class="button-link" type="button" data-action="prev">Vorheriger Platz</button>
-                        <span class="ceremony-counter" data-counter></span>
-                        <button class="button-link" type="button" data-action="next">Nächster Platz</button>
-                      </div>
-                    </div>
-                  {% else %}
-                    <span class="muted">Noch keine Einträge.</span>
-                  {% endif %}
-                </section>
-              {% endfor %}
+                    {% else %}
+                      <span class="muted">Noch keine Einträge.</span>
+                    {% endif %}
+                  </section>
+                {% endfor %}
+              </div>
             </div>
           </article>
         {% endfor %}
@@ -563,60 +630,84 @@
 
     <section class="card">
       <h2>Verlauf pro Fahrer: Überholungen als Schnittpunkte</h2>
-      <p>Alle Fahrerlinien liegen übereinander. Wenn sich Linien schneiden, ist der Überholpunkt sichtbar.</p>
-      <div class="history-grid">
+      <p>Über die Übersichtsleiste wechselst du zwischen den Kategorien. X-Achse zeigt Tage, Y-Achse zeigt km, Höhenmeter, Zeit oder km/h.</p>
+      <div class="insight-shell">
+        <div class="overview-tabs" role="tablist" aria-label="Übersichtsleiste">
+          {% for category in ceremony_progress_graphs %}
+            <button class="overview-tab{% if loop.first %} active{% endif %}" type="button" role="tab" aria-selected="{{ 'true' if loop.first else 'false' }}" data-overview-tab data-target="overview-{{ category.key }}">{{ category.title }}</button>
+          {% endfor %}
+        </div>
+
         {% for category in ceremony_progress_graphs %}
-          <article class="history-card category-{{ category.key }}">
-            <strong>{{ category.title }}</strong>
-            {% for gender in ['Femme', 'Homme'] %}
-              <section class="overtake-gender">
-                <span class="gender-title">{{ gender }}</span>
-                {% set chart = category.charts_by_gender[gender] %}
-                {% if chart.series %}
-                  <div class="chart-frame">
-                    <svg class="chart-svg" viewBox="0 0 100 100" preserveAspectRatio="none" aria-label="{{ category.title }} Verlauf {{ gender }}">
-                      <g class="chart-grid">
-                        <line x1="0" y1="0" x2="100" y2="0"></line>
-                        <line x1="0" y1="25" x2="100" y2="25"></line>
-                        <line x1="0" y1="50" x2="100" y2="50"></line>
-                        <line x1="0" y1="75" x2="100" y2="75"></line>
-                        <line x1="0" y1="100" x2="100" y2="100"></line>
-                      </g>
-                      {% for series in chart.series %}
-                        <polyline class="chart-line" points="{{ series.polyline }}" stroke="{{ series.color }}"></polyline>
-                        {% for point in series.points %}
-                          <circle class="chart-point" cx="{{ point.x_pct }}" cy="{{ point.y_pct }}" r="0.9" fill="{{ series.color }}">
-                            <title>{{ series.name }} · {{ point.day_label }} · {{ point.value|round(2) }} {{ category.unit }}</title>
-                          </circle>
-                        {% endfor %}
-                      {% endfor %}
-                    </svg>
-                    <div class="chart-axis">
-                      <span>0 {{ category.unit }}</span>
-                      <span>{{ chart.y_max|round(2) }} {{ category.unit }}</span>
-                    </div>
-                    <div class="day-row">
-                      {% for day in chart.days %}
-                        <span>{{ day }}</span>
-                      {% endfor %}
-                    </div>
+          <article id="overview-{{ category.key }}" class="overview-panel category-{{ category.key }}{% if loop.first %} active{% endif %}" role="tabpanel" data-overview-panel>
+            <div class="overview-title">
+              <strong>{{ category.title }}</strong>
+              <span class="muted">{{ category.description }} · Y-Achse: {{ category.unit }} · X-Achse: Tage</span>
+            </div>
+            <div class="chart-stage">
+              {% for gender in ['Femme', 'Homme'] %}
+                <section class="chart-card">
+                  <div class="chart-head">
+                    <span class="gender-title">{{ gender }}</span>
+                    <span class="axis-note">Y: {{ category.unit }} · X: Tage</span>
                   </div>
-                  <ul class="legend-list">
-                    {% for series in chart.series %}
-                      <li>
-                        <span class="legend-main">
-                          <span class="legend-dot" style="background: {{ series.color }};"></span>
-                          <span class="legend-name">{{ series.name }}</span>
-                        </span>
-                        <strong>{{ series.latest_value|round(2) }} {{ category.unit }}</strong>
-                      </li>
-                    {% endfor %}
-                  </ul>
-                {% else %}
-                  <span class="muted">Noch keine Fahrten für diesen Verlauf vorhanden.</span>
-                {% endif %}
-              </section>
-            {% endfor %}
+                  {% set chart = category.charts_by_gender[gender] %}
+                  {% if chart.series %}
+                    <div class="chart-scroll">
+                      <div class="chart-canvas" style="--day-count: {{ chart.days|length }};">
+                        <svg class="chart-svg" viewBox="0 0 100 100" preserveAspectRatio="none" aria-label="{{ category.title }} Verlauf {{ gender }}">
+                          <g class="chart-grid">
+                            <line x1="0" y1="0" x2="100" y2="0"></line>
+                            <line x1="0" y1="20" x2="100" y2="20"></line>
+                            <line x1="0" y1="40" x2="100" y2="40"></line>
+                            <line x1="0" y1="60" x2="100" y2="60"></line>
+                            <line x1="0" y1="80" x2="100" y2="80"></line>
+                            <line x1="0" y1="100" x2="100" y2="100"></line>
+                            {% if chart.days|length > 1 %}
+                              {% for day in chart.days %}
+                                {% set idx = loop.index0 %}
+                                {% set x_pct = (idx / (chart.days|length - 1)) * 100 %}
+                                <line x1="{{ x_pct }}" y1="0" x2="{{ x_pct }}" y2="100"></line>
+                              {% endfor %}
+                            {% endif %}
+                          </g>
+                          {% for series in chart.series %}
+                            <polyline class="chart-line" points="{{ series.polyline }}" stroke="{{ series.color }}"></polyline>
+                            {% for point in series.points %}
+                              <circle class="chart-point" cx="{{ point.x_pct }}" cy="{{ point.y_pct }}" r="0.9" fill="{{ series.color }}">
+                                <title>{{ series.name }} · {{ point.day_label }} · {{ point.value|round(2) }} {{ category.unit }}</title>
+                              </circle>
+                            {% endfor %}
+                          {% endfor %}
+                        </svg>
+                        <div class="chart-axis">
+                          <span>0 {{ category.unit }}</span>
+                          <span>{{ chart.y_max|round(2) }} {{ category.unit }}</span>
+                        </div>
+                        <div class="day-row" style="--day-count: {{ chart.days|length }};">
+                          {% for day in chart.days %}
+                            <span>{{ day }}</span>
+                          {% endfor %}
+                        </div>
+                      </div>
+                    </div>
+                    <ul class="legend-list">
+                      {% for series in chart.series %}
+                        <li>
+                          <span class="legend-main">
+                            <span class="legend-dot" style="background: {{ series.color }};"></span>
+                            <span class="legend-name">{{ series.name }}</span>
+                          </span>
+                          <strong>{{ series.latest_value|round(2) }} {{ category.unit }}</strong>
+                        </li>
+                      {% endfor %}
+                    </ul>
+                  {% else %}
+                    <span class="muted">Noch keine Fahrten für diesen Verlauf vorhanden.</span>
+                  {% endif %}
+                </section>
+              {% endfor %}
+            </div>
           </article>
         {% endfor %}
       </div>
@@ -643,11 +734,16 @@
       </div>
     </section>
   </div>
+
   <script>
     const changeDialog = document.getElementById('changes-dialog');
     const openChanges = document.getElementById('open-changes');
     const closeChanges = document.getElementById('close-changes');
     const ceremonyViewers = document.querySelectorAll('[data-ceremony-viewer]');
+    const podiumTabs = Array.from(document.querySelectorAll('[data-podium-tab]'));
+    const podiumPanels = Array.from(document.querySelectorAll('[data-podium-panel]'));
+    const overviewTabs = Array.from(document.querySelectorAll('[data-overview-tab]'));
+    const overviewPanels = Array.from(document.querySelectorAll('[data-overview-panel]'));
 
     if (changeDialog && openChanges && closeChanges) {
       openChanges.addEventListener('click', () => {
@@ -664,8 +760,51 @@
         } else {
           changeDialog.removeAttribute('open');
         }
+        sessionStorage.setItem('ceremonyChangesSeenV3', '1');
       });
+
+      if (!sessionStorage.getItem('ceremonyChangesSeenV3')) {
+        if (typeof changeDialog.showModal === 'function') {
+          changeDialog.showModal();
+        } else {
+          changeDialog.setAttribute('open', 'open');
+        }
+      }
     }
+
+    const activatePodiumCategory = (targetId) => {
+      podiumTabs.forEach((tab) => {
+        const isActive = tab.dataset.target === targetId;
+        tab.classList.toggle('active', isActive);
+        tab.setAttribute('aria-selected', isActive ? 'true' : 'false');
+      });
+      podiumPanels.forEach((panel) => {
+        panel.classList.toggle('active', panel.id === targetId);
+      });
+    };
+
+    podiumTabs.forEach((tab) => {
+      tab.addEventListener('click', () => {
+        activatePodiumCategory(tab.dataset.target);
+      });
+    });
+
+    const activateOverview = (targetId) => {
+      overviewTabs.forEach((tab) => {
+        const isActive = tab.dataset.target === targetId;
+        tab.classList.toggle('active', isActive);
+        tab.setAttribute('aria-selected', isActive ? 'true' : 'false');
+      });
+      overviewPanels.forEach((panel) => {
+        panel.classList.toggle('active', panel.id === targetId);
+      });
+    };
+
+    overviewTabs.forEach((tab) => {
+      tab.addEventListener('click', () => {
+        activateOverview(tab.dataset.target);
+      });
+    });
 
     ceremonyViewers.forEach((viewer) => {
       const slides = Array.from(viewer.querySelectorAll('[data-slide]'));
